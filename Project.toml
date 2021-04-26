@@ -1,0 +1,4 @@
+name = "Cockatrice"
+uuid = "9717ed07-727c-442c-8f6f-35ef42c1d4d5"
+authors = ["Lucca Fraser <lucca.fraser@gmail.com>"]
+version = "0.1.0"
