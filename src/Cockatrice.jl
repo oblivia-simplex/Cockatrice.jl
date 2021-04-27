@@ -1,5 +1,8 @@
 module Cockatrice
 
-greet() = print("Hello World!")
+include("Names.jl")
+include("config.jl")
+include("Geo.jl")
+
 
 end # module

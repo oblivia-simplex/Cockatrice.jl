@@ -1,3 +1,5 @@
+module Geo
+
 using StatsBase
 using Memoize
 using Distributed
@@ -7,7 +9,10 @@ using Images
 using ImageInTerminal
 
 
-Base.@kwdef mutable struct Geography{G<:Individual,N}
+export Geography, tournament
+
+
+Base.@kwdef mutable struct Geography{G,N}
     deme::Array{G,N}
     indices::CartesianIndices
     toroidal::Bool
@@ -95,10 +100,35 @@ function choose_combatants(geo::Geography, tsize; origin=nothing)
     sample(geo.indices, weights, tsize, replace=false)
 end
 
+
 function see_combatants(geo::Geography, tsize; origin=nothing)
     combatants = choose_combatants(geo, tsize, origin=origin)
     cells = [c ∈ combatants ? 1.0 : 0.0 for c in geo.indices]
     Gray.(cells)
+end
+
+
+function see_fitness(geo::Geography; d=1)
+    Gray.([g.fitness[d] for g in geo.deme])
+end
+
+
+"""
+Returns a vector of indices, sorted according to fitness.
+"""
+function tournament(geo::Geography, fitness_function::Function)
+  indices = choose_combatants(geo, geo.config.t_size)
+  Threads.@threads for i in indices
+    geo.deme[i].fitness = fitness_function(geo.deme[i])
+  end
+  sort(indices, by = i -> geo.deme[i].fitness)
+end
+
+
+function evaluate!(geo::Geography, fitness_function::Function)
+  Threads.@threads for i in geo.indices
+    geo.deme[i].fitness = fitness_function(geo.deme[i])
+  end
 end
 
 ##
@@ -122,4 +152,6 @@ Base.iterate(geo::Geography, state) = Base.iterate(geo.deme, state)
 
 Base.keys(geo::Geography) = geo.indices
 
-Base.vec(geo::Geography) = Base.vec(geo.deme
+Base.vec(geo::Geography) = Base.vec(geo.deme)
+
+end # module
