@@ -1,6 +1,6 @@
 module Cockatrice
 
-VERSION = 0.01
+_VERSION = 0.01
 
 include("Names.jl")
 include("config.jl")
