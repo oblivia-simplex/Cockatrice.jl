@@ -3,6 +3,7 @@ module Geo
 using StatsBase
 using Memoize
 using Distributed
+using RecursiveArrayTools
 # These two dependencies are optional, and are only used by the visualization
 # functions, that are, in turn, only used for debugging purposes.
 using Images
@@ -128,8 +129,9 @@ function trace_video(geo::Geography; key=nothing, color=colorant"green")
   normed = m > 0.0 ? geo.trace ./ m : geo.trace
   normed = (n -> n == -Inf ? 0.0 : n).(normed)
   frames = color .* normed
-  dims = length(size(frames[1]))+1
-  AxisArray(cat(frames..., dims=dims))
+  fvec = VectorOfArray(frames)
+  video = convert(Array, fvec)
+  AxisArray(video)
 end
   
 

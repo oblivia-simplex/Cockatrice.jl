@@ -196,6 +196,12 @@ version = "0.10.2"
 deps = ["Random", "Serialization", "Sockets"]
 uuid = "8ba89e20-285c-5b6f-9357-94700520ee1b"
 
+[[DocStringExtensions]]
+deps = ["LibGit2", "Markdown", "Pkg", "Test"]
+git-tree-sha1 = "9d4f64f79012636741cf01133158a54b24924c32"
+uuid = "ffbed154-4ef7-542d-bbb7-c09d3a79fcae"
+version = "0.8.4"
+
 [[EarCut_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
 git-tree-sha1 = "92d8f9f208637e8d2d28c664051a00569c01493d"
@@ -863,6 +869,12 @@ git-tree-sha1 = "7a5026a6741c14147d1cb6daf2528a77ca28eb51"
 uuid = "01d81517-befc-4cb6-b9ec-a95719d0359c"
 version = "0.3.2"
 
+[[RecursiveArrayTools]]
+deps = ["ArrayInterface", "DocStringExtensions", "LinearAlgebra", "RecipesBase", "Requires", "StaticArrays", "Statistics", "ZygoteRules"]
+git-tree-sha1 = "0e9e01661833e774de67723f567424a2b9e3f7d2"
+uuid = "731186ca-8d62-57ce-b412-fbd966d074cd"
+version = "2.11.3"
+
 [[Reexport]]
 git-tree-sha1 = "57d8440b0c7d98fc4f889e478e80f268d534c9d5"
 uuid = "189a3867-3050-52da-a836-e630ba90ab69"
@@ -1209,6 +1221,12 @@ deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
 git-tree-sha1 = "2c1332c54931e83f8f94d310fa447fd743e8d600"
 uuid = "3161d3a3-bdf6-5164-811a-617609db77b4"
 version = "1.4.8+0"
+
+[[ZygoteRules]]
+deps = ["MacroTools"]
+git-tree-sha1 = "9e7a1e8ca60b742e508a315c17eef5211e7fbfd7"
+uuid = "700de1a5-db45-46bc-99cf-38207098b444"
+version = "0.2.1"
 
 [[adwaita_icon_theme_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg", "hicolor_icon_theme_jll"]
