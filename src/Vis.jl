@@ -14,7 +14,7 @@ function display_images(images; dims=(300,300), gui=nothing)
       i = r*c
       image = images[r,c]
       if image !== nothing
-        ImageView.imshow(canvases[r,c], images[r,c])
+        ImageView.imshow!(canvases[r,c], images[r,c])
       end
     end
   end
