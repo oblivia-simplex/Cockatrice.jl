@@ -18,6 +18,7 @@ Base.@kwdef mutable struct Geography{G,N}
     toroidal::Bool
     locality::Int
     config::NamedTuple
+    trace
 end
 
 
@@ -38,6 +39,7 @@ function Geography(
         locality = config.population.locality,
         toroidal = config.population.toroidal,
         config = config,
+        trace = [],
     )
 end
 
@@ -113,13 +115,32 @@ function see_fitness(geo::Geography; d=1)
 end
 
 
+function trace_fitness!(geo::Geography; d=1)
+  # easy to generalize this
+  # collect multiple traces for each attribute of fitness
+  # or other attributes
+  push!(geo.trace, [g.fitness[d] for g in geo.deme])
+end
+
+
+function trace_video(geo::Geography; key=nothing, color=colorant"green")
+  frames = color .* geo.trace
+  dims = length(size(frames[1]))+1
+  AxisArray(cat(frames..., dims=dims))
+end
+  
+
+
 """
 Returns a vector of indices, sorted according to fitness.
 """
-function tournament(geo::Geography, fitness_function::Function)
+function tournament(geo::Geography, fitness_function::Function; trace=true)
   indices = choose_combatants(geo, geo.config.population.t_size)
   #=Threads.@threads=# for i in indices
     geo.deme[i].fitness = fitness_function(geo.deme[i])
+  end
+  if trace
+    trace_fitness!(geo)
   end
   sort(indices, by = i -> geo.deme[i].fitness)
 end

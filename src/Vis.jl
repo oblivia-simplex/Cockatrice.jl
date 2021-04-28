@@ -4,8 +4,10 @@ using ImageView, Gtk.ShortNames, Images
 
 function display_images(images; dims=(300,300), gui=nothing)
   rows, cols = size(images)
+  show = ImageView.imshow!
   if gui ≡ nothing
     gui = imshow_gui(dims, (rows, cols))
+    show = ImageView.imshow
   end
   canvases = gui["canvas"]
   
@@ -14,7 +16,7 @@ function display_images(images; dims=(300,300), gui=nothing)
       i = r*c
       image = images[r,c]
       if image !== nothing
-        ImageView.imshow!(canvases[r,c], images[r,c])
+        show(canvases[r,c], images[r,c])
       end
     end
   end
