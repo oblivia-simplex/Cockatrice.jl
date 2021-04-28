@@ -124,7 +124,10 @@ end
 
 
 function trace_video(geo::Geography; key=nothing, color=colorant"green")
-  frames = color .* geo.trace
+  m = maximum.(geo.trace) |> maximum
+  normed = m > 0.0 ? geo.trace ./ m : geo.trace
+  normed = (n -> n < 0.0 ? 0.0 : n).(normed)
+  frames = color .* normed
   dims = length(size(frames[1]))+1
   AxisArray(cat(frames..., dims=dims))
 end
