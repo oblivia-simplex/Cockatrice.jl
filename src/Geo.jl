@@ -145,7 +145,7 @@ function trace_video(geo::Geography; key="fitness:1", color=colorant"green")
 end
   
 
-struct Tracer
+Base.@kwdef struct Tracer
   key::String
   callback::Function
   rate::Float64
