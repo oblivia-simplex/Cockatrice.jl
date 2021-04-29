@@ -40,7 +40,7 @@ function Geography(
         locality = config.population.locality,
         toroidal = config.population.toroidal,
         config = config,
-        trace = [],
+        trace = Dict(),
     )
 end
 
@@ -116,17 +116,25 @@ function see_fitness(geo::Geography; d=1)
 end
 
 
+function trace!(geo::Geography; callback::Function, key::String)
+  if !(key ∈ keys(geo.trace))
+    geo.trace[key] = []
+  end
+  push!(geo.trace[key], callback.(geo.deme))
+end
+
 function trace_fitness!(geo::Geography; d=1)
   # easy to generalize this
   # collect multiple traces for each attribute of fitness
   # or other attributes
-  push!(geo.trace, [g.fitness[d] for g in geo.deme])
+  trace!(geo, callback=(g -> g.fitness[d]), key="fitness_$(d)")
 end
 
 
-function trace_video(geo::Geography; key=nothing, color=colorant"green")
-  m = maximum.(geo.trace) |> maximum
-  normed = m > 0.0 ? geo.trace ./ m : geo.trace
+function trace_video(geo::Geography; key="fitness_1", color=colorant"green")
+  trace = geo.trace[key]
+  m = maximum.(trace) |> maximum
+  normed = m > 0.0 ? trace ./ m : trace
   normed = (n -> n == -Inf ? 0.0 : n).(normed)
   frames = color .* normed
   fvec = VectorOfArray(frames)
@@ -139,13 +147,13 @@ end
 """
 Returns a vector of indices, sorted according to fitness.
 """
-function tournament(geo::Geography, fitness_function::Function; trace=true)
+function tournament(geo::Geography, fitness_function::Function; trace::Vector{NamedTuple}=[])
   indices = choose_combatants(geo, geo.config.population.t_size)
   #=Threads.@threads=# for i in indices
     geo.deme[i].fitness = fitness_function(geo.deme[i])
   end
-  if trace
-    trace_fitness!(geo)
+  for tr in trace
+    trace!(geo, key=tr.key, callback=tr.callback)
   end
   sort(indices, by = i -> geo.deme[i].fitness)
 end
