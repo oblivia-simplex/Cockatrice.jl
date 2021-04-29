@@ -10,7 +10,7 @@ using Images
 using ImageInTerminal
 
 
-export Geography, tournament
+export Geography, tournament, Tracer
 
 
 Base.@kwdef mutable struct Geography{G,N}
@@ -116,11 +116,13 @@ function see_fitness(geo::Geography; d=1)
 end
 
 
-function trace!(geo::Geography; callback::Function, key::String)
+function trace!(geo::Geography; callback::Function, key::String, sampling_rate::Float64=1.0)
   if !(key ∈ keys(geo.trace))
     geo.trace[key] = []
   end
-  push!(geo.trace[key], callback.(geo.deme))
+  if rand() <= sampling_rate
+    push!(geo.trace[key], callback.(geo.deme))
+  end
 end
 
 function trace_fitness!(geo::Geography; d=1)
@@ -131,7 +133,7 @@ function trace_fitness!(geo::Geography; d=1)
 end
 
 
-function trace_video(geo::Geography; key="fitness_1", color=colorant"green")
+function trace_video(geo::Geography; key="fitness:1", color=colorant"green")
   trace = geo.trace[key]
   m = maximum.(trace) |> maximum
   normed = m > 0.0 ? trace ./ m : trace
@@ -143,11 +145,20 @@ function trace_video(geo::Geography; key="fitness_1", color=colorant"green")
 end
   
 
+struct Tracer
+  key::String
+  callback::Function
+  rate::Float64
+end
+
+function Tracer(key::String, callback::Function)
+  Tracer(key, callback, 1.0)
+end
 
 """
 Returns a vector of indices, sorted according to fitness.
 """
-function tournament(geo::Geography, fitness_function::Function; trace::Vector{NamedTuple{(:key, :callback)}}=[])
+function tournament(geo::Geography, fitness_function::Function; trace::Vector{Tracer}=[])
   indices = choose_combatants(geo, geo.config.population.t_size)
   #=Threads.@threads=# for i in indices
     geo.deme[i].fitness = fitness_function(geo.deme[i])
