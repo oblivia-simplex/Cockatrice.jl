@@ -27,6 +27,7 @@ Base.@kwdef mutable struct Geography{G,N}
     toroidal::Bool
     locality::Int
     config::NamedTuple
+    tracers::Vector{Tracer}
     trace::Dict{String, Vector{Array}}
 end
 
