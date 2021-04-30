@@ -35,7 +35,7 @@ end
 function Geography(
     constructor,
     config;
-    tracers=[],
+    tracers::Vector{Tracer}=[],
 )
 
     dimstr = join(string.(config.population.size), "×")
@@ -50,7 +50,7 @@ function Geography(
         locality = config.population.locality,
         toroidal = config.population.toroidal,
         config = config,
-        tracers=tracers,
+        tracers = tracers,
         trace = Dict(),
     )
 end
