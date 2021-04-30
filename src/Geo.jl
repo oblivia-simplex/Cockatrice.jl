@@ -13,19 +13,28 @@ using ImageInTerminal
 export Geography, tournament, Tracer
 
 
+
+Base.@kwdef struct Tracer
+  key::String
+  callback::Function
+  rate::Float64 = 1.0
+end
+
+
 Base.@kwdef mutable struct Geography{G,N}
     deme::Array{G,N}
     indices::CartesianIndices
     toroidal::Bool
     locality::Int
     config::NamedTuple
-    trace
+    trace::Dict{String, Vector{Array}}
 end
 
 
 function Geography(
     constructor,
-    config,
+    config;
+    tracers=[],
 )
 
     dimstr = join(string.(config.population.size), "×")
@@ -40,6 +49,7 @@ function Geography(
         locality = config.population.locality,
         toroidal = config.population.toroidal,
         config = config,
+        tracers=tracers,
         trace = Dict(),
     )
 end
@@ -125,11 +135,11 @@ function trace!(geo::Geography; callback::Function, key::String, sampling_rate::
   end
 end
 
-function trace_fitness!(geo::Geography; d=1)
-  # easy to generalize this
-  # collect multiple traces for each attribute of fitness
-  # or other attributes
-  trace!(geo, callback=(g -> g.fitness[d]), key="fitness_$(d)")
+
+function trace!(geo::Geography)
+  for tr in geo.tracers
+    trace!(geo; callback=tr.callback, key=tr.key, samping_rate=tr.rate)
+  end
 end
 
 
@@ -137,7 +147,7 @@ function trace_video(geo::Geography; key="fitness:1", color=colorant"green")
   trace = geo.trace[key]
   m = maximum.(trace) |> maximum
   normed = m > 0.0 ? trace ./ m : trace
-  normed = (n -> n == -Inf ? 0.0 : n).(normed)
+  normed = (n -> isfinite(n) ? n : 0.0).(normed)
   frames = color .* normed
   fvec = VectorOfArray(frames)
   video = convert(Array, fvec)
@@ -145,25 +155,14 @@ function trace_video(geo::Geography; key="fitness:1", color=colorant"green")
 end
   
 
-Base.@kwdef struct Tracer
-  key::String
-  callback::Function
-  rate::Float64 = 1.0
-end
-
-
-
 
 """
 Returns a vector of indices, sorted according to fitness.
 """
-function tournament(geo::Geography, fitness_function::Function; trace::Vector{Tracer}=[])
+function tournament(geo::Geography, fitness_function::Function)
   indices = choose_combatants(geo, geo.config.population.t_size)
   #=Threads.@threads=# for i in indices
     geo.deme[i].fitness = fitness_function(geo.deme[i])
-  end
-  for tr in trace
-    trace!(geo, key=tr.key, callback=tr.callback)
   end
   sort(indices, by = i -> geo.deme[i].fitness)
 end
