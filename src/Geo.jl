@@ -126,7 +126,7 @@ function see_fitness(geo::Geography; d=1)
 end
 
 
-function trace!(geo::Geography; callback::Function, key::String, sampling_rate::Float64=1.0)
+function trace!(geo::Geography, callback::Function, key::String, sampling_rate::Float64=1.0)
   if !(key ∈ keys(geo.trace))
     geo.trace[key] = []
   end
@@ -138,7 +138,7 @@ end
 
 function trace!(geo::Geography)
   for tr in geo.tracers
-    trace!(geo; callback=tr.callback, key=tr.key, samping_rate=tr.rate)
+    trace!(geo, tr.callback, tr.key, tr.rate)
   end
 end
 
