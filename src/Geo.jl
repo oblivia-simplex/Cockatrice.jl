@@ -28,7 +28,7 @@ Base.@kwdef mutable struct Geography{G,N}
     locality::Int
     config::NamedTuple
     tracers::Vector{Tracer}
-    trace::Dict{String, Vector{Array}}
+    trace::Dict = Dict()
 end
 
 
@@ -51,7 +51,6 @@ function Geography(
         toroidal = config.population.toroidal,
         config = config,
         tracers = tracers,
-        trace = Dict(),
     )
 end
 
