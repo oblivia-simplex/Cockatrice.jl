@@ -5,7 +5,7 @@ _VERSION = 0.01
 include("Names.jl")
 include("config.jl")
 include("Geo.jl")
-include("Vis.jl")
+#include("Vis.jl")
 
 
 end # module
