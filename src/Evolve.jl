@@ -73,19 +73,26 @@ Base.@kwdef mutable struct Evolution
     elites::Vector = []
     tracers::Vector = []
     trace::Dict = Dict()
+    mutate::Function
+    crossover::Function
 end
 
 
-function Evolution(config::NamedTuple; creature_type::DataType, fitness::Function, tracers=[])
+function Evolution(config::NamedTuple;
+                   creature_type::DataType,
+                   fitness::Function,
+                   tracers=[],
+                   mutate::Function,
+                   crossover::Function)
     logger = nothing # TODO
     geo = Geo.Geography(creature_type, config)
     Evolution(config=config, logger=logger, geo=geo, fitness=fitness)
 end
 
 
-function Evolution(config::String; fitness::Function, tracers=[])
+function Evolution(config::String; kwargs...)
     cfg = Config.parse(config)
-    Evolution(cfg, fitness=fitness, tracers=tracers)
+    Evolution(cfg; kwargs...)
 end
 
 
@@ -130,16 +137,16 @@ function trace_video(evo::Evolution; key="fitness:1", color=colorant"green")
 end
 
 
-function step!(evo::Evolution; crossover=crossover, eval_children=false, mutate=mutate!)
+function step!(evo::Evolution; eval_children=false)
     ranking = Geo.tournament(evo.geo, evo.fitness)
     parents = evo.geo[ranking[end-1:end]]
-    children = crossover(parents...)
+    children = evo.crossover(parents...)
     if eval_children
         evo.fitness.(children)
     end
     for child in children
         if rand() < evo.config.genotype.mutation_rate
-            mutate(child)
+            evo.mutate(child)
         end
     end
     graves = ranking[1:2]
