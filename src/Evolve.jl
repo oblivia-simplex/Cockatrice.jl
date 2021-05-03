@@ -1,9 +1,10 @@
 module Evolve
 
 import YAML
-include("Geo.jl")
-include("Config.jl")
-include("Names.jl")
+
+using ..Config
+using ..Names
+using ..Geo
 
 Tracer = Geo.Tracer
 
