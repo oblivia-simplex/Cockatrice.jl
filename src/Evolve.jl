@@ -78,7 +78,7 @@ end
 
 function Evolution(config::NamedTuple; creature_type::DataType, fitness::Function, tracers=[])
     logger = nothing # TODO
-    geo = Geo.Geography(creature_type, config, tracers=tracers)
+    geo = Geo.Geography(creature_type, config)
     Evolution(config=config, logger=logger, geo=geo, fitness=fitness)
 end
 
