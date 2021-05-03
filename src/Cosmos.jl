@@ -1,5 +1,6 @@
 module Cosmos
 
+using Distributed
 using DistributedArrays
 using ..Evo
 using ..Config
