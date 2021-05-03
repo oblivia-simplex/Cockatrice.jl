@@ -146,7 +146,7 @@ function step!(evo::Evolution; crossover=crossover, eval_children=false, mutate=
     evo.geo[graves] = children
     preserve_elites!(evo)
     evo.iteration += 1
-    Geo.trace!(evo.geo)
+    trace!(evo.geo)
     return
 end
 
