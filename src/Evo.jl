@@ -1,4 +1,4 @@
-module Evolve
+module Evo
 
 import YAML
 
