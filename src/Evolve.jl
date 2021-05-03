@@ -1,0 +1,147 @@
+module Evolve
+
+import YAML
+push!(LOAD_PATH, @__DIR__)
+using Geo
+using Config
+using Names
+using Geo: Tracer 
+using RecursiveArrayTools
+using Images
+using Distributed
+
+
+export AbstractCreature, Evolution, step!
+
+
+
+abstract type AbstractCreature end
+
+
+#==================== Example ==============================
+#
+Base.@kwdef mutable struct Creature <: AbstractCreature 
+    chromosome::Vector{UInt32}
+    phenotype::Union{Nothing, Hatchery.Profile}
+    fitness::Vector{Float64}
+    name::String
+    generation::Int
+    num_offspring::Int = 0
+end
+============================================================#
+
+function validate_creature(C::DataType)
+  @assert hasfield(C, :chromosome)
+  @assert hasfield(C, :fitness)
+  @assert hasfield(C, :name)
+  @assert hasfield(C, :generation)
+  @assert hasfield(C, :num_offspring)
+end
+
+Base.isequal(c1::C, c2::C) where C <: AbstractCreature = c1.name == c2.name
+Base.isless(c1::C, c2::C) where C <: AbstractCreature = c1.fitness < c2.fitness
+
+
+function crossover(parents::Tuple{AbstractCreature}...)
+  @error "crossover needs to be implemented for the concrete creature type $(typeof(parents))"
+end
+
+
+function mutate!(parent::AbstractCreature)
+  @error "mutate! needs to be implemented for the concrete creature type $(typeof(parent))"
+end
+
+
+function init_fitness(config::NamedTuple)
+  Float64[-Inf for _ in 1:config.d_fitness]
+end
+
+
+function init_fitness(template::Vector)
+  Float64[-Inf for _ in template]
+end
+
+
+Base.@kwdef mutable struct Evolution
+    config::NamedTuple
+    logger
+    geo::Geo.Geography
+    fitness::Function
+    iteration::Int = 0
+    elites::Vector = []
+    tracers::Vector = []
+    trace::Dict = Dict()
+end
+
+
+function Evolution(config::NamedTuple; creature_type::DataType, fitness::Function, tracers=[])
+    logger = nothing # TODO
+    geo = Geo.Geography(creature_type, config, tracers=tracers)
+    Evolution(config=config, logger=logger, geo=geo, fitness=fitness)
+end
+
+
+function Evolution(config::String; fitness::Function, tracers=[])
+    cfg = Config.parse(config)
+    Evolution(cfg, fitness=fitness, tracers=tracers)
+end
+
+
+function preserve_elites!(evo::Evolution)
+  pop = sort([vec(evo.geo); evo.elites])
+  n_elites = evo.config.population.n_elites
+  evo.elites = [deepcopy(pop[end-i]) for i in 0:(n_elites-1)]
+end
+
+
+function evaluate!(evo::Evolution, fitness::Function)
+  Geo.evaluate!(evo.geo, fitness)
+end
+
+
+function trace!(evo::Evolution, callback::Function, key::String, sampling_rate::Float64=1.0)
+    if !(key ∈ keys(evo.trace))
+        evo.trace[key] = []
+    end
+    if rand() <= sampling_rate
+        push!(evo.trace[key], callback.(evo.geo.deme))
+    end
+end
+
+
+function trace!(evo::Evolution)
+    for tr in evo.tracers
+        trace!(evo, tr.callback, tr.key, tr.rate)
+    end
+end
+
+
+function trace_video(evo::Evolution; key="fitness:1", color=colorant"green")
+    trace = evo.trace[key]
+    m = maximum.(trace) |> maximum
+    normed = m > 0.0 ? trace ./ m : trace
+    normed = (n -> isfinite(n) ? n : 0.0).(normed)
+    frames = color .* normed
+    fvec = VectorOfArray(frames)
+    video = convert(Array, fvec)
+    AxisArray(video)
+end
+
+
+function step!(evo::Evolution; crossover=crossover, eval_children=false)
+    ranking = Geo.tournament(evo.geo, evo.fitness)
+    parents = evo.geo[ranking[end-1:end]]
+    children = crossover(parents...)
+    if eval_children
+        evo.fitness.(children)
+    end
+    mutate_with_probability!.(children, evo.config.genotype.mutation_rate)
+    graves = ranking[1:2]
+    evo.geo[graves] = children
+    preserve_elites!(evo)
+    evo.iteration += 1
+    Geo.trace!(evo.geo)
+    return
+end
+
+end # end module
