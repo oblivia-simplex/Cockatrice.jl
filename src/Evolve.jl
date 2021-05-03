@@ -90,6 +90,7 @@ function Evolution(config::NamedTuple;
               logger=logger,
               geo=geo,
               fitness=fitness,
+              tracers=tracers,
               mutate=mutate,
               crossover=crossover)
 end
