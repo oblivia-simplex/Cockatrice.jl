@@ -27,15 +27,12 @@ Base.@kwdef mutable struct Geography{G,N}
     toroidal::Bool
     locality::Int
     config::NamedTuple
-    tracers::Vector{Tracer}
-    trace::Dict = Dict()
 end
 
 
 function Geography(
     constructor,
     config;
-    tracers::Vector{Tracer}=[],
 )
 
     dimstr = join(string.(config.population.size), "×")
@@ -50,7 +47,6 @@ function Geography(
         locality = config.population.locality,
         toroidal = config.population.toroidal,
         config = config,
-        tracers = tracers,
     )
 end
 
@@ -124,36 +120,7 @@ end
 function see_fitness(geo::Geography; d=1)
     Gray.([g.fitness[d] for g in geo.deme])
 end
-
-
-function trace!(geo::Geography, callback::Function, key::String, sampling_rate::Float64=1.0)
-  if !(key ∈ keys(geo.trace))
-    geo.trace[key] = []
-  end
-  if rand() <= sampling_rate
-    push!(geo.trace[key], callback.(geo.deme))
-  end
-end
-
-
-function trace!(geo::Geography)
-  for tr in geo.tracers
-    trace!(geo, tr.callback, tr.key, tr.rate)
-  end
-end
-
-
-function trace_video(geo::Geography; key="fitness:1", color=colorant"green")
-  trace = geo.trace[key]
-  m = maximum.(trace) |> maximum
-  normed = m > 0.0 ? trace ./ m : trace
-  normed = (n -> isfinite(n) ? n : 0.0).(normed)
-  frames = color .* normed
-  fvec = VectorOfArray(frames)
-  video = convert(Array, fvec)
-  AxisArray(video)
-end
-  
+ 
 
 
 """
