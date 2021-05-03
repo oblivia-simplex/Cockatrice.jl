@@ -2,4 +2,4 @@ Cockatrice Genetic Programming Framework
 ========================================
 
 
-![Cockatrice](./img/cockatrice.jpg)
+![Cockatrice](./img/cockatrice.png)
