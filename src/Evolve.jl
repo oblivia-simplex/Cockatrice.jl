@@ -90,7 +90,7 @@ end
 
 
 function preserve_elites!(evo::Evolution)
-  pop = sort([vec(evo.geo); evo.elites])
+  pop = sort([vec(evo.geo); evo.elites], by=(x -> x.fitness))
   n_elites = evo.config.population.n_elites
   evo.elites = [deepcopy(pop[end-i]) for i in 0:(n_elites-1)]
 end
