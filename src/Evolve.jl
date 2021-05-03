@@ -86,7 +86,12 @@ function Evolution(config::NamedTuple;
                    crossover::Function)
     logger = nothing # TODO
     geo = Geo.Geography(creature_type, config)
-    Evolution(config=config, logger=logger, geo=geo, fitness=fitness)
+    Evolution(config=config,
+              logger=logger,
+              geo=geo,
+              fitness=fitness,
+              mutate=mutate,
+              crossover=crossover)
 end
 
 
