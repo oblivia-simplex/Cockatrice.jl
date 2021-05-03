@@ -1,11 +1,12 @@
 module Evolve
 
 import YAML
-push!(LOAD_PATH, @__DIR__)
-using Geo
-using Config
-using Names
-using Geo: Tracer 
+include("Geo.jl")
+include("Config.jl")
+include("Names.jl")
+
+Tracer = Geo.Tracer
+
 using RecursiveArrayTools
 using Images
 using Distributed

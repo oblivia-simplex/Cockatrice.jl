@@ -4,7 +4,6 @@ _VERSION = 0.01
 
 include("Names.jl")
 include("Config.jl")
-include("Geo.jl")
 include("Evolve.jl")
 #include("Vis.jl")
 
