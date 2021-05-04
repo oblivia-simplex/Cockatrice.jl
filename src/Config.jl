@@ -2,7 +2,7 @@ module Config
 
 using YAML
 using Dates
-include("Names.jl")
+using ..Names
 
 export get_config
 
@@ -25,5 +25,16 @@ function parse(cfg_file::String; kwargs...)
     end
     proc_config(cfg)
 end
+
+
+function get_fitness_function(config::NamedTuple, mod)
+    Meta.parse("$(mod).$(config.selection.fitness_function)") |> eval
+end
+
+
+function get_fitness_function(config_path::String, mod)
+    get_fitness_function(Config.parse(config_path), mod)
+end
+
 
 end # end module
