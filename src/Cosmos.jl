@@ -2,6 +2,7 @@ module Cosmos
 
 using Distributed
 using DistributedArrays
+using StatsBase
 using ..Evo
 using ..Config
 
