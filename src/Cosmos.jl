@@ -63,7 +63,18 @@ function δ_run(;config="./config.yaml",
 
     for i in 1:config.n_gen
         δ_step!(E; kwargs...)
-        if i % config.log_gen != 0
+
+        # Migration
+        if rand() < config.population.migration_rate
+            if config.population.migration_type == "elite"
+                elite_migration!(E)
+            elseif config.population.migration_type == "swap"
+                swap_migration!(E)
+            end
+        end
+
+        # Logging
+        if i % config.logging.log_every != 0
             continue
         end
         mean_fit = δ_stats(E, key="fitness:1", ϕ=mean)
@@ -79,5 +90,30 @@ function δ_run(;config="./config.yaml",
         end
     end
 end
+
+
+
+function elite_migration!(E)
+    src, dst = sample(1:length(E), 2, replace=false)
+    i = rand(E[dst].geo.indices)
+    if isempty(E[src].elites)
+        return
+    end
+    emigrant = rand(E[src].elites)
+    @info "Elite migration: $(emigrant.name) is moving from Island $(src) to $(dst):$(i)"
+    E[dst].geo.deme[i] = emigrant
+end
+
+
+function swap_migration!(E)
+    src, dst = sample(1:length(E), 2, replace=false)
+    i = rand(E[dst].geo.indices)
+    j = rand(E[src].geo.indices)
+    @info "Swap migration: Island $(src), slot $(j) is trading places with Island $(dst), slot $(i)"
+    emigrant = E[src].geo.deme[j]
+    E[dst].geo.deme[j] = E[src].geo.deme[i]
+    E[dst].geo.deme[i] = emigrant
+end
+
 
 end # end module
