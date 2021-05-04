@@ -42,7 +42,22 @@ function δ_init(;config="./config.yaml",
 end
 
 
-function δ_run(;config="./config.yaml",
+function δ_run(;config="./config.yaml", kwargs...)
+    config = Config.parse(config)
+    δ_run(;config=config, kwargs...)
+end
+
+
+#function δ_run(;genotype_module::Module,
+#               kwargs...)
+#    δ_run(;creature_type=genotype_module.Creature,
+#          crossover=genotype_module.crossover,
+#          mutate=genotype_module.mutate!,
+#          kwargs...)
+#end
+#
+
+function δ_run(;config::NamedTuple,
                fitness::Function,
                workers=workers(),
                tracers=[],

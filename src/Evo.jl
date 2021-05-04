@@ -55,7 +55,7 @@ end
 
 
 function init_fitness(config::NamedTuple)
-  Float64[-Inf for _ in 1:config.d_fitness]
+  Float64[-Inf for _ in 1:config.selection.d_fitness]
 end
 
 
