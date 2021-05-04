@@ -4,7 +4,7 @@ using YAML
 using Dates
 using ..Names
 
-export get_config
+export get_config, get_fitness_function
 
 "convert Dict to named tuple"
 function proc_config(cfg::Dict)

@@ -4,10 +4,6 @@ using StatsBase
 using Memoize
 using Distributed
 using RecursiveArrayTools
-# These two dependencies are optional, and are only used by the visualization
-# functions, that are, in turn, only used for debugging purposes.
-using Images
-using ImageInTerminal
 
 
 export Geography, tournament, Tracer

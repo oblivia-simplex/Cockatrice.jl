@@ -1,6 +1,20 @@
 module Vis
 
 using ImageView, Gtk.ShortNames, Images
+using ..Evo
+
+
+function trace_video(evo::Evolution; key="fitness:1", color=colorant"green")
+    trace = evo.trace[key]
+    m = maximum.(trace) |> maximum
+    normed = m > 0.0 ? trace ./ m : trace
+    normed = (n -> isfinite(n) ? n : 0.0).(normed)
+    frames = color .* normed
+    fvec = VectorOfArray(frames)
+    video = convert(Array, fvec)
+    AxisArray(video)
+end
+
 
 function display_images(images; dims=(300,300), gui=nothing)
   rows, cols = size(images)
