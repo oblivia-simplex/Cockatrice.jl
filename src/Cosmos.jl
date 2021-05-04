@@ -68,8 +68,6 @@ function δ_run(;config::NamedTuple,
                crossover=crossover,
                mutate=mutate)
 
-    config = Config.parse(config)
-
     for i in 1:config.n_gen
         δ_step!(E; kwargs...)
 
