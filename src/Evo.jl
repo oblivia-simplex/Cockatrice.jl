@@ -48,7 +48,7 @@ function crossover(parents::Tuple{AbstractCreature}...)
 end
 
 
-function mutate!(parent::AbstractCreature)
+function mutate!(parent::AbstractCreature; config=nothing)
   @error "mutate! needs to be implemented for the concrete creature type $(typeof(parent))"
 end
 
@@ -138,7 +138,7 @@ function step!(evo::Evolution; eval_children=false)
     end
     for child in children
         if rand() < evo.config.genotype.mutation_rate
-            evo.mutate(child)
+            evo.mutate(child, config=evo.config)
         end
     end
     graves = ranking[1:2]
