@@ -61,6 +61,7 @@ function init_fitness(template::Vector)
 end
 
 
+#=
 mutable struct Trace
     d::Dict{String, SharedArray}
     tracers::Vector
@@ -76,13 +77,13 @@ end
 
 
 function slice(trace::Trace; key, iteration)
+    if
     trace.d[key][2:end, iteration, :, :]
 end
 
 #function slice(trace::Trace; key, ids, iteration)
 #    trace.d[key][ids, iteration, :, :]
 #end
-
 
 function trace!(trace::Trace, evo)
     for tr in trace.tracers
@@ -93,7 +94,7 @@ end
 function trace!(evo)
     trace!(evo.trace2, evo)
 end
-
+=#
 
 Base.@kwdef mutable struct Evolution
     config::NamedTuple
@@ -104,7 +105,6 @@ Base.@kwdef mutable struct Evolution
     elites::Vector = []
     tracers::Vector = []
     trace::Dict = Dict()
-    trace2
     mutate::Function
     crossover::Function
 end
@@ -114,7 +114,6 @@ function Evolution(config::NamedTuple;
                    creature_type::DataType,
                    fitness::Function,
                    tracers=[],
-                   trace=nothing,
                    mutate::Function,
                    crossover::Function)
     logger = nothing # TODO
@@ -124,7 +123,6 @@ function Evolution(config::NamedTuple;
               geo=geo,
               fitness=fitness,
               tracers=tracers,
-              trace2=trace,
               mutate=mutate,
               crossover=crossover)
 end
@@ -158,11 +156,11 @@ function trace!(evo::Evolution, callback::Function, key::String, sampling_rate::
 end
 
 
-#function trace!(evo::Evolution)
-#    for tr in evo.tracers
-#        trace!(evo, tr.callback, tr.key, tr.rate)
-#    end
-#end
+function trace!(evo::Evolution)
+    for tr in evo.tracers
+        trace!(evo, tr.callback, tr.key, tr.rate)
+    end
+end
 
 function step!(evo::Evolution; eval_children=false)
     ranking = Geo.tournament(evo.geo, evo.fitness)
