@@ -24,7 +24,7 @@ end
     using DistributedArrays
     using Statistics
     using Cockatrice.Config
-    using Cockatrice.Geo: Tracer
+    using Cockatrice.Evo: Tracer
     using Dates
 
     include("$(@__DIR__)/LinearGP.jl")
@@ -44,6 +44,13 @@ DEFAULT_TRACE = [
     Tracer(key="generation", callback=(g -> g.generation)),
 ]
 
+DEFAULT_LOGGERS = [
+    (key="fitness:1", reducer=Statistics.mean),
+    (key="fitness:1", reducer=Base.maximum),
+    (key="fitness:1", reducer=Statistics.std),
+    (key="chromosome_len", reducer=Statistics.mean),
+    (key="num_offspring", reducer=Base.maximum),
+]
 
 # this one's mostly for REPL use
 function init(;config_path=DEFAULT_CONFIG, fitness=LinearGP.FF.classify, tracers=DEFAULT_TRACE)
@@ -69,13 +76,7 @@ function launch(config_path)
                  crossover=LinearGP.crossover,
                  mutate=LinearGP.mutate!,
                  tracers=DEFAULT_TRACE,
-                 loggers=[
-                     (key="fitness:1", reducer=Statistics.mean),
-                     (key="fitness:1", reducer=Base.maximum),
-                     (key="fitness:1", reducer=Statistics.std),
-                     (key="chromosome_len", reducer=Stastistics.mean),
-                     (key="num_offspring", reducer=Base.maximum),
-                 ])
+                 loggers=DEFAULT_LOGGERS)
 end
 
 

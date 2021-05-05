@@ -114,7 +114,7 @@ function δ_run(;config::NamedTuple,
 
         for logger in loggers
             stat = δ_stats(E, key=logger.key, ϕ=logger.reducer)
-            println("[$(i)] $(nameof(logger.reducer)) $(key): $(stat)")
+            println("[$(i)] $(nameof(logger.reducer)) $(logger.key): $(stat)")
         end
         # FIXME: this is just a placeholder for logging, which will be customized
         # by the client code.
