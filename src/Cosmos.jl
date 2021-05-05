@@ -56,7 +56,6 @@ function δ_init(;config=nothing,
                        fitness=fitness,
                        crossover=crossover,
                        mutate=mutate,
-                       trace=trace,
                        tracers=tracers)]
     end
 end
