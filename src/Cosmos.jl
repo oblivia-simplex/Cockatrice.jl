@@ -76,6 +76,11 @@ end
 #end
 #
 
+function create_stats_table(loggers)
+    DataFrame([lg.key => [] for lg in loggers]...)
+end
+
+
 function δ_run(;config::NamedTuple,
                fitness::Function,
                workers=workers(),
@@ -85,6 +90,8 @@ function δ_run(;config::NamedTuple,
                crossover::Function,
                creature_type::DataType,
                kwargs...)
+
+    table = create_stats_table(loggers)
 
     E = δ_init(config=config,
                fitness=fitness,
@@ -112,14 +119,17 @@ function δ_run(;config::NamedTuple,
             continue
         end
 
+        s = []
         for logger in loggers
             stat = δ_stats(E, key=logger.key, ϕ=logger.reducer)
+            push!(s, stat)
             println("[$(i)] $(nameof(logger.reducer)) $(logger.key): $(stat)")
         end
+        push!(table, s)
         # FIXME: this is just a placeholder for logging, which will be customized
         # by the client code.
     end
-    return E
+    return E, table
 end
 
 
