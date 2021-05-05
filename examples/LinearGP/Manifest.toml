@@ -125,7 +125,7 @@ version = "0.9.41"
 
 [[Cockatrice]]
 deps = ["BenchmarkTools", "CSV", "DataFrames", "Dates", "Distributed", "DistributedArrays", "Gtk", "ImageInTerminal", "ImageView", "Images", "InformationMeasures", "MLDatasets", "Memoize", "Plots", "Printf", "RDatasets", "RecursiveArrayTools", "SharedArrays", "StatsBase", "YAML"]
-git-tree-sha1 = "46ad9239891776940363455bf49b4a20b2fdc222"
+git-tree-sha1 = "76425a7a0fc6a05789d7c4c00f58a79d0b3b1786"
 repo-rev = "main"
 repo-url = "../.."
 uuid = "9717ed07-727c-442c-8f6f-35ef42c1d4d5"

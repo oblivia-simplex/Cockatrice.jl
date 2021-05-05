@@ -36,7 +36,7 @@ end
 
 function δ_stats(E::World; key="fitness:1", ϕ=mean)
     #fut = @spawnat 2 E[:L][1].trace2.d[key][2:end, E[:L][1].iteration, :, :]
-    fut = @spawnat 2 Evo.slice(E[:L][1].trace2, iteration=E[:L][1].iteration)
+    fut = @spawnat 2 Evo.slice(E[:L][1].trace2, key=key, iteration=E[:L][1].iteration)
     arr = fetch(fut)
     filter(isfinite, arr) |> ϕ
 end
