@@ -1,4 +1,4 @@
-n_gen: 10000
+n_gen: 120
 
 selection:
   fitness_function: "classify"
@@ -19,5 +19,5 @@ population:
   migration_type: "elite"
 
 logging:
-  log_every: 10
+  log_every: 5
   save_every: 50
