@@ -1,5 +1,6 @@
 module Vis
 
+using RecursiveArrayTools
 using ImageView, Gtk.ShortNames, Images
 using ..Evo
 
@@ -8,7 +9,7 @@ function trace_video(evo::Evolution; key="fitness:1", color=colorant"green")
     trace = evo.trace[key]
     m = maximum.(trace) |> maximum
     normed = m > 0.0 ? trace ./ m : trace
-    normed = (n -> isfinite(n) ? n : 0.0).(normed)
+    normed = (T -> (n -> isfinite(n) ? n : 0.0).(T)).(normed)
     frames = color .* normed
     fvec = VectorOfArray(frames)
     video = convert(Array, fvec)

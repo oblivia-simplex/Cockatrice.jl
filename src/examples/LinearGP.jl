@@ -1,5 +1,7 @@
 module LinearGP
 
+using Printf
+
 using ..Evo
 using ..Names
 
@@ -14,7 +16,8 @@ end
 
 Base.@kwdef mutable struct Creature
     chromosome::Vector{Inst}
-    phenotype::Union{Nothing,Vector{Float64}}
+    effective_code
+    phenotype
     fitness::Vector{Float64}
     name::String
     generation::Int
@@ -27,6 +30,7 @@ function Creature(config::NamedTuple)
     chromosome = [rand_inst(ops=OPS, num_regs=10) for _ in 1:len]
     fitness = Evo.init_fitness(config)
     Creature(chromosome=chromosome,
+             effective_code=nothing,
              phenotype=nothing,
              fitness=fitness,
              name=Names.rand_name(4),
@@ -34,8 +38,20 @@ function Creature(config::NamedTuple)
 end
 
 
+function Base.show(io::IO, inst::Inst)
+    op_str = inst.op |> nameof |> String
+    if inst.arity == 2
+        @printf io "R[%02d] ← R[%02d] %s R[%02d]" inst.dst inst.dst op_str inst.src
+    elseif inst.arity == 1
+        @printf io "R[%02d] ← %s R[%02d]" inst.dst op_str inst.src
+    else # inst.arity == 0
+        @printf io "R[%02d] ← %s" inst.dst inst.op()
+    end
+end
+
 function Creature(chromosome::Vector{Inst})
     Creature(chromosome=chromosome,
+             effective_code=nothing,
              phenotype=nothing,
              fitness=[-Inf],
              name=Names.rand_name(4),
@@ -110,7 +126,7 @@ function evaluate_inst!(;regs::Vector{Float64}, inst::Inst)
 end
 
 
-function evaluate(;regs::Vector{Float64}, args::Vector{Float64}, code::Vector{Inst})
+function evaluate(;regs::Vector{Float64}, args::Vector{Float64}, code::Vector)
     regs = copy(regs)
     regs[1:length(args)] = args
     for inst in code
@@ -119,6 +135,24 @@ function evaluate(;regs::Vector{Float64}, args::Vector{Float64}, code::Vector{In
     regs
 end
 
+
+function strip_introns(code, out_regs)
+    active_regs = copy(out_regs)
+    active_insts = []
+    for inst in reverse(code)
+        if inst.dst ∈ active_regs 
+            push!(active_insts, inst)
+            filter!(r -> r != inst.dst, active_regs)
+            if inst.arity == 2
+                push!(active_regs, inst.dst)
+            end
+            if inst.arity ≥ 1
+                push!(active_regs, inst.src)
+            end
+        end
+    end
+    reverse(active_insts)
+end
 
 module FF
 
@@ -139,11 +173,19 @@ DATA, CLASSES = _get_categorical_dataset("iris")
 
 NUM_REGS = 10
 
-function classify(g)
-    code = g.chromosome
+function classify(g; strip_introns=true)
     regs = zeros(Float64, NUM_REGS) # FIXME shouldn't be hardcoded, pass config to ff?
-    outregs = (length(regs) - length(CLASSES)):length(regs)
+    outregs = collect((1 + length(regs) - length(CLASSES)):length(regs))
+    code = g.chromosome
+    if strip_introns
+        if g.effective_code === nothing
+            g.effective_code = LinearGP.strip_introns(g.chromosome, outregs)
+        end
+        code = g.effective_code
+    end
+    if length(code) == 0 return [0.0, 0.0] end
     correct = 0
+    choices = []
     for row in eachrow(DATA)
         r = collect(row)
         class = r[end]
@@ -152,12 +194,16 @@ function classify(g)
         output = res_regs[outregs]
         ranking = sort(keys(output), by = i -> output[i])
         choice = ranking[end]
+        push!(choices, choice)
         if choice == class
             correct += 1
         end
     end
+    g.phenotype = choices
     accuracy = correct / length(eachrow(DATA))
-    return [accuracy]
+    parsimony = 1.0 / length(g.chromosome)
+    effective_parsimony = 1.0 / length(code)
+    return [accuracy, effective_parsimony, parsimony]
 end
 
 end # end FF

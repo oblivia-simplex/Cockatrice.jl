@@ -8,7 +8,7 @@ include("Geo.jl")
 include("Evo.jl")
 include("Cosmos.jl")
 include("examples/LinearGP.jl")
-#include("Vis.jl")
+include("Vis.jl")
 
 
 end # module
