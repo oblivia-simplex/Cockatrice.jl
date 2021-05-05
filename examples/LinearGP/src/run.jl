@@ -1,17 +1,21 @@
 using Distributed
 
+@everywhere push!(LOAD_PATH, @__DIR__)
 @everywhere using Pkg
-@everywhere Pkg.activate("$(@__DIR__)/../..")
+@everywhere Pkg.activate("$(@__DIR__)/..")
 @everywhere Pkg.instantiate()
 @everywhere using DistributedArrays
 @everywhere using StatsBase
+@everywhere using Cockatrice.Config
+@everywhere using Cockatrice.Geo: Tracer
 @everywhere using Dates
-@everywhere include("$(@__DIR__)/../Cockatrice.jl")
+@everywhere include("$(@__DIR__)/LinearGP.jl")
 
-Cosmos = Cockatrice.Cosmos
-LinearGP = Cockatrice.LinearGP
-Tracer = Cockatrice.Evo.Tracer
 
+using Cockatrice.Cosmos
+
+
+DEFAULT_CONFIG = "$(@__DIR__)/../configs/line ar_gp"
 
 DEFAULT_TRACE = [
     Tracer(key="fitness:1", callback=(g -> g.fitness[1])),
@@ -22,7 +26,7 @@ DEFAULT_TRACE = [
 
 
 # this one's mostly for REPL use
-function init(;config_path="$(@__DIR__)/../../configs/linear_gp.yaml", fitness=nothing, tracers=DEFAULT_TRACE)
+function init(;config_path=DEFAULT_CONFIG, fitness=nothing, tracers=DEFAULT_TRACE)
     if fitness === nothing
         fitness = get_fitness_function(config_path, FF)
     end
@@ -48,7 +52,7 @@ end
 
 
 if !isinteractive()
-    config = length(ARGS) > 0 ? ARGS[1] : "$(@__DIR__)/../../configs/linear_gp.yaml"
+    config = length(ARGS) > 0 ? ARGS[1] : DEFAULT_CONFIG
     run(config)
 end
 

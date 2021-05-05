@@ -2,8 +2,8 @@ module LinearGP
 
 using Printf
 
-using ..Evo
-using ..Names
+using Cockatrice.Evo
+using Cockatrice.Names
 
 
 struct Inst
