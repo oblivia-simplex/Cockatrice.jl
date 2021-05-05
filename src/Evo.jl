@@ -10,7 +10,7 @@ using Distributed
 using Dates
 
 
-export AbstractCreature, Evolution, step!
+export AbstractCreature, Evolution, step!, Tracer, step_for_duration!
 
 
 
@@ -58,6 +58,20 @@ end
 
 function init_fitness(template::Vector)
   Float64[-Inf for _ in template]
+end
+
+
+Base.@kwdef struct Tracer
+    key::String
+    callback::Function
+    rate::Float64 = 1.0
+end
+
+function Tracer(tr::NamedTuple)
+    Tracer(
+        key=tr.key,
+        callback=tr.callback,
+        rate=:rate ∈ keys(tr)? tr.rate : 1.0)
 end
 
 

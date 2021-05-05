@@ -6,15 +6,8 @@ using Distributed
 using RecursiveArrayTools
 
 
-export Geography, tournament, Tracer
+export Geography, tournament
 
-
-
-Base.@kwdef struct Tracer
-  key::String
-  callback::Function
-  rate::Float64 = 1.0
-end
 
 
 Base.@kwdef mutable struct Geography{G,N}

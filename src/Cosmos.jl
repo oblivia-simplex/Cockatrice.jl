@@ -4,6 +4,7 @@ using Distributed
 using DistributedArrays
 using StatsBase
 using Dates
+using DataFrames
 using ..Evo
 using ..Config
 
@@ -26,6 +27,10 @@ function δ_step!(E::World; kwargs...)
     return
 end
 
+
+DEFAULT_LOGGERS = [
+    (key="fitness:1", reducer=StatsBase.mean),
+]
 
 function δ_stats(E::World; key="fitness:1", ϕ=mean)
     futs = [@spawnat w (filter(isfinite, E[:L][1].trace[key][end]) 
@@ -75,6 +80,7 @@ function δ_run(;config::NamedTuple,
                fitness::Function,
                workers=workers(),
                tracers=[],
+               loggers=[],
                mutate::Function,
                crossover::Function,
                creature_type::DataType,
@@ -105,15 +111,11 @@ function δ_run(;config::NamedTuple,
         if i % config.logging.log_every != 0
             continue
         end
-        mean_fit = δ_stats(E, key="fitness:1", ϕ=mean)
-        max_fit  = δ_stats(E, key="fitness:1", ϕ=maximum)
-        mean_gen = δ_stats(E, key="generation", ϕ=mean)
-        max_offspring = δ_stats(E, key="num_offspring", ϕ=maximum)
-        pre="[$(i)]:"
-        println("$pre mean fit = $(mean_fit)")
-        println("$pre max fit  = $(max_fit)")
-        println("$pre mean gen = $(mean_gen)")
-        println("$pre max offs = $(max_offspring)")
+
+        for logger in loggers
+            stat = δ_stats(E, key=logger.key, ϕ=logger.reducer)
+            println("[$(i)] $(nameof(logger.reducer)) $(key): $(stat)")
+        end
         # FIXME: this is just a placeholder for logging, which will be customized
         # by the client code.
     end
