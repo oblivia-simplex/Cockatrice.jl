@@ -81,6 +81,10 @@ function trace!(trace::Trace, evo)
     end
 end
 
+function trace!(evo::Evolution)
+    trace!(evo.trace2, evo)
+end
+
 
 Base.@kwdef mutable struct Evolution
     config::NamedTuple
@@ -145,11 +149,11 @@ function trace!(evo::Evolution, callback::Function, key::String, sampling_rate::
 end
 
 
-function trace!(evo::Evolution)
-    for tr in evo.tracers
-        trace!(evo, tr.callback, tr.key, tr.rate)
-    end
-end
+#function trace!(evo::Evolution)
+#    for tr in evo.tracers
+#        trace!(evo, tr.callback, tr.key, tr.rate)
+#    end
+#end
 
 function step!(evo::Evolution; eval_children=false)
     ranking = Geo.tournament(evo.geo, evo.fitness)
