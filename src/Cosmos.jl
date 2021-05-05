@@ -77,7 +77,8 @@ end
 #
 
 function create_stats_table(loggers)
-    DataFrame([lg.key => [] for lg in loggers]...)
+    cols = [Symbol("$(lg.key)_$(nameof(lg.reducer))") for lg in loggers]
+    DataFrame([c => [] for c in cols]...)
 end
 
 
