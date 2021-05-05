@@ -96,7 +96,10 @@ function δ_run(;config::NamedTuple,
             println("$pre mean gen = $(mean_gen[w])")
             println("$pre max offs = $(max_offspring[w])")
         end
+        # FIXME: this is just a placeholder for logging, which will be customized
+        # by the client code.
     end
+    return E
 end
 
 
