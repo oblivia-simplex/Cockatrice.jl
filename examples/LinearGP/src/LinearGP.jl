@@ -183,7 +183,7 @@ function classify(g; strip_introns=true)
         end
         code = g.effective_code
     end
-    if length(code) == 0 return [0.0, 0.0] end
+    if length(code) == 0 return zeros(Float64, 3) end
     correct = 0
     choices = []
     for row in eachrow(DATA)

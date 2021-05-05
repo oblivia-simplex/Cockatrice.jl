@@ -3,11 +3,29 @@ module Cosmos
 using Distributed
 using DistributedArrays
 using StatsBase
+using Dates
 using ..Evo
 using ..Config
 
 
+Evolution = Evo.Evolution
 World = DArray{Evo.Evolution,1,Array{Evo.Evolution,1}}
+
+
+@everywhere function step_for_duration!(evo, duration; kwargs...)
+    start = now()
+    while now() - start < duration
+        Evo.step!(evo; kwargs...)
+    end
+    return
+end
+
+
+function δ_step_for_duration!(E::World, duration::TimePeriod; kwargs...)
+    futs = [@spawnat w step_for_duration!(E[:L][1], duration; kwargs...) for w in procs(E)]
+    asyncmap(fetch, futs)
+    return
+end
 
 
 function δ_step!(E::World; kwargs...)
@@ -126,5 +144,9 @@ function swap_migration!(E)
     E[dst].geo.deme[i] = emigrant
 end
 
+
+# TODO: the islands should execute a bit more asynchronously. maybe pass a DURATION variable,
+# and they each run until at least n seconds have passed, THEN they sync up, perhaps migrate, etc.
+# this gives you the simplicity of fork/join, and some of the advantages of the async pier model.
 
 end # end module
