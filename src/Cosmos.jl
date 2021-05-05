@@ -50,7 +50,7 @@ function δ_init(;config=nothing,
                 tracers=[],
                 workers=workers())::DArray
 
-    trace = Evo.Trace(tracers, config.n_gen * 500, cfg.population.size)
+    trace = Evo.Trace(tracers, config.n_gen * 500, config.population.size)
     DArray((length(workers),), workers) do I
         [Evo.Evolution(config,
                        creature_type=creature_type,
