@@ -1,15 +1,12 @@
 module Evo
 
-import YAML
-
 using ..Config
 using ..Names
 using ..Geo
 
-#Tracer = Geo.Tracer
-
 using RecursiveArrayTools
 using Distributed
+using Dates
 
 
 export AbstractCreature, Evolution, step!
