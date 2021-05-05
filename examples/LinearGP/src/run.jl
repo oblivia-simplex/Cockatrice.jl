@@ -38,7 +38,7 @@ function init(;config_path=DEFAULT_CONFIG, fitness=nothing, tracers=DEFAULT_TRAC
 end
 
 
-function run(config_path)
+function launch(config_path)
     config = Config.parse(config_path)
     fitness_function = LinearGP.FF.classify
     @assert fitness_function isa Function

@@ -15,7 +15,7 @@ population:
   toroidal: true
   locality: 16
   n_elites: 10
-  migration_rate: 0.01
+  migration_rate: 0.5
   migration_type: "elite"
 
 logging:
