@@ -71,7 +71,7 @@ function Tracer(tr::NamedTuple)
     Tracer(
         key=tr.key,
         callback=tr.callback,
-        rate=:rate ∈ keys(tr)? tr.rate : 1.0)
+        rate=:rate ∈ keys(tr) ? tr.rate : 1.0)
 end
 
 

@@ -22,7 +22,7 @@ end
     using Pkg; Pkg.instantiate()
 
     using DistributedArrays
-    using StatsBase
+    using Statistics
     using Cockatrice.Config
     using Cockatrice.Geo: Tracer
     using Dates
@@ -68,7 +68,14 @@ function launch(config_path)
                  creature_type=LinearGP.Creature,
                  crossover=LinearGP.crossover,
                  mutate=LinearGP.mutate!,
-                 tracers=DEFAULT_TRACE)
+                 tracers=DEFAULT_TRACE,
+                 loggers=[
+                     (key="fitness:1", reducer=Statistics.mean),
+                     (key="fitness:1", reducer=Base.maximum),
+                     (key="fitness:1", reducer=Statistics.std),
+                     (key="chromosome_len", reducer=Stastistics.mean),
+                     (key="num_offspring", reducer=Base.maximum),
+                 ])
 end
 
 
