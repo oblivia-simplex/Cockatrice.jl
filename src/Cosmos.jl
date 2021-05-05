@@ -88,7 +88,8 @@ function δ_run(;config::NamedTuple,
                mutate=mutate)
 
     for i in 1:config.n_gen
-        δ_step!(E; kwargs...)
+        #δ_step!(E; kwargs...)
+        δ_step_for_duration!(E, Second(1); kwargs...)
 
         # Migration
         if rand() < config.population.migration_rate
