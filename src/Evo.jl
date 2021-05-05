@@ -81,7 +81,7 @@ function trace!(trace::Trace, evo)
     end
 end
 
-function trace!(evo::Evolution)
+function trace!(evo)
     trace!(evo.trace2, evo)
 end
 
