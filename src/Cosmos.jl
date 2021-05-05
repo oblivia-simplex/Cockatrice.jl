@@ -124,7 +124,7 @@ end
 
 
 function elite_migration!(E)
-    src, dst = sample(1:length(E), 2, replace=false)
+    @show src, dst = sample(1:length(E), 2, replace=false)
     i = rand(E[dst].geo.indices)
     if isempty(E[src].elites)
         return
