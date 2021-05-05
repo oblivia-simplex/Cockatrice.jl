@@ -13,7 +13,9 @@ using Distributed
 @everywhere include("$(@__DIR__)/LinearGP.jl")
 =#
 
-addprocs(4, topology=:master_worker, exeflags="--project=$(Base.active_project())")
+if nprocs() == 1
+    addprocs(4, topology=:master_worker, exeflags="--project=$(Base.active_project())")
+end
 
 @everywhere begin
     @info "Preparing environment..."
@@ -48,10 +50,11 @@ function init(;config_path=DEFAULT_CONFIG, fitness=nothing, tracers=DEFAULT_TRAC
     if fitness === nothing
         fitness = get_fitness_function(config_path, FF)
     end
-    Cosmos.δ_init(fitness=fitness,
-                  crossover=Genotype.crossover,
-                  mutate=Genotype.mutate!,
-                  creature_type=Genotype.Creature,
+    Cosmos.δ_init(config=config_path,
+                  fitness=fitness,
+                  crossover=LinearGP.crossover,
+                  mutate=LinearGP.mutate!,
+                  creature_type=LinearGP.Creature,
                   tracers=tracers)
 end
 

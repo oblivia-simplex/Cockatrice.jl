@@ -63,7 +63,7 @@ end
 
 mutable struct Trace
     d::Dict{String, SharedArray}
-    callbacks::Vector
+    tracers::Vector
 end
 
 

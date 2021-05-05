@@ -181,7 +181,7 @@ DATA = CSV.read("$(@__DIR__)/../data/digimon.csv", DataFrame)
 #DATA, CLASSES = _get_categorical_dataset("iris")
 
 
-function classify(g; strip_introns=true)
+function classify(g; strip_introns=true, config=nothing)
     regs = zeros(Float64, NUM_REGS) # FIXME shouldn't be hardcoded, pass config to ff?
     outregs = collect((1 + length(regs) - length(CLASSES)):length(regs))
     code = g.chromosome
