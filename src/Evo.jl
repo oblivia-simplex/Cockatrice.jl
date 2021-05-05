@@ -77,7 +77,7 @@ end
 
 function trace!(trace::Trace, evo)
     for tr in trace.tracers
-        trace.d[key][myid()][evo.iteration] = callback.(evo.geo.deme)
+        trace.d[tr.key][myid()][evo.iteration] = tr.callback.(evo.geo.deme)
     end
 end
 
