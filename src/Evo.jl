@@ -75,7 +75,7 @@ function Trace(tracers, n_iterations, population_size)
 end
 
 
-function trace!(trace::Trace, evo::Evolution)
+function trace!(trace::Trace, evo)
     for tr in trace.tracers
         trace.d[key][myid()][evo.iteration] = callback.(evo.geo.deme)
     end
@@ -91,6 +91,7 @@ Base.@kwdef mutable struct Evolution
     elites::Vector = []
     tracers::Vector = []
     trace::Dict = Dict()
+    trace2
     mutate::Function
     crossover::Function
 end
@@ -110,7 +111,7 @@ function Evolution(config::NamedTuple;
               geo=geo,
               fitness=fitness,
               tracers=tracers,
-              trace=trace,
+              trace2=trace,
               mutate=mutate,
               crossover=crossover)
 end
