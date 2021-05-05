@@ -14,7 +14,8 @@ World = DArray{Evo.Evolution,1,Array{Evo.Evolution,1}}
 
 function δ_step_for_duration!(E::World, duration::TimePeriod; kwargs...)
     futs = [@spawnat w Evo.step_for_duration!(E[:L][1], duration; kwargs...) for w in procs(E)]
-    asyncmap(fetch, futs)
+    iters = asyncmap(fetch, futs)
+    @info "Iterations in $(duration): $(iters) (mean $(mean(iters)))"
     return
 end
 

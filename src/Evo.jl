@@ -190,8 +190,7 @@ function step_for_duration!(evo, duration; kwargs...)
         Evo.step!(evo; kwargs...)
     end
     iters = evo.iteration - start_iter
-    @info "$(iters) in $(duration)"
-    return
+    return iters
 end
 
 
