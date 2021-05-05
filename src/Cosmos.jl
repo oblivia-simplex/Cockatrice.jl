@@ -26,21 +26,20 @@ function δ_step!(E::World; kwargs...)
 end
 
 
-#=
 function δ_stats(E::World; key="fitness:1", ϕ=mean)
-    futs = [@spawnat w (w => filter(isfinite, E[:L][1].trace[key][end]) 
+    futs = [@spawnat w (filter(isfinite, E[:L][1].trace[key][end]) 
                         |> ϕ) for w in procs(E)]
-    asyncmap(fetch, futs) |> Dict
+    asyncmap(fetch, futs) |> ϕ
 end
-=#
 
+#=
 function δ_stats(E::World; key="fitness:1", ϕ=mean)
     #fut = @spawnat 2 E[:L][1].trace2.d[key][2:end, E[:L][1].iteration, :, :]
     fut = @spawnat 2 Evo.slice(E[:L][1].trace2, key=key, iteration=E[:L][1].iteration)
     arr = fetch(fut)
     filter(isfinite, arr) |> ϕ
 end
-
+=#
 
 function δ_init(;config=nothing,
                 fitness::Function=(_) -> [rand()],
