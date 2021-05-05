@@ -60,6 +60,7 @@ end
 
 
 function launch(config_path)
+    config = Config.parse(config_path)
     fitness_function = LinearGP.FF.classify
     @assert fitness_function isa Function
     Cosmos.δ_run(config=config,

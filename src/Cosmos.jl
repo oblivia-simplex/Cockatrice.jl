@@ -42,7 +42,7 @@ function δ_stats(E::World; key="fitness:1", ϕ=mean)
 end
 
 
-function δ_init(;config="./config.yaml",
+function δ_init(;config=nothing,
                 fitness::Function=(_) -> [rand()],
                 crossover::Function,
                 mutate::Function,
@@ -50,8 +50,7 @@ function δ_init(;config="./config.yaml",
                 tracers=[],
                 workers=workers())::DArray
 
-    cfg = Config.parse(config)
-    trace = Evo.Trace(tracers, cfg.n_gen * 500, cfg.population.size)
+    trace = Evo.Trace(tracers, config.n_gen * 500, cfg.population.size)
     DArray((length(workers),), workers) do I
         [Evo.Evolution(config,
                        creature_type=creature_type,
