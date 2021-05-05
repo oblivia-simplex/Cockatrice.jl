@@ -149,9 +149,12 @@ end
 
 function step_for_duration!(evo, duration; kwargs...)
     start = now()
+    start_iter = evo.iteration
     while now() - start < duration
         Evo.step!(evo; kwargs...)
     end
+    iters = evo.iteration - start_iter
+    @info "$(iters) in $(duration)"
     return
 end
 
