@@ -75,6 +75,15 @@ function Trace(tracers, n_iterations, population_size)
 end
 
 
+function slice(trace::Trace; key, iteration)
+    trace.d[key][2:end, iteration, :, :]
+end
+
+function slice(trace::Trace; key, ids, iteration)
+    trace.d[key][ids, iteration, :, :]
+end
+
+
 function trace!(trace::Trace, evo)
     for tr in trace.tracers
         trace.d[tr.key][myid(), evo.iteration, :, :] = tr.callback.(evo.geo.deme)
