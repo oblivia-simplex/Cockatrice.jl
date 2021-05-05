@@ -149,4 +149,16 @@ function step!(evo::Evolution; eval_children=false)
     return
 end
 
+
+function step_for_duration!(evo, duration; kwargs...)
+    start = now()
+    while now() - start < duration
+        Evo.step!(evo; kwargs...)
+    end
+    return
+end
+
+
+
+
 end # end module
