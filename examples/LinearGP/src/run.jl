@@ -46,7 +46,7 @@ DEFAULT_TRACE = [
 
 
 # this one's mostly for REPL use
-function init(;config_path=DEFAULT_CONFIG, fitness=nothing, tracers=DEFAULT_TRACE)
+function init(;config_path=DEFAULT_CONFIG, fitness=LinearGP.FF.classify, tracers=DEFAULT_TRACE)
     if fitness === nothing
         fitness = get_fitness_function(config_path, FF)
     end
