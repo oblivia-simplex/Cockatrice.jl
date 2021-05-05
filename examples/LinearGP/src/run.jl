@@ -1,5 +1,6 @@
 using Distributed
 
+#=
 @everywhere push!(LOAD_PATH, @__DIR__)
 @everywhere using Pkg
 @everywhere Pkg.activate("$(@__DIR__)/..")
@@ -10,12 +11,29 @@ using Distributed
 @everywhere using Cockatrice.Geo: Tracer
 @everywhere using Dates
 @everywhere include("$(@__DIR__)/LinearGP.jl")
+=#
 
+addprocs(4, topology=:master_worker, exeflags="--project=$(Base.active_project())")
+
+@everywhere begin
+    @info "Preparing environment..."
+    using Pkg; Pkg.instantiate()
+
+    using DistributedArrays
+    using StatsBase
+    using Cockatrice.Config
+    using Cockatrice.Geo: Tracer
+    using Dates
+
+    include("$(@__DIR__)/LinearGP.jl")
+    @info "Environment ready."
+
+end
 
 using Cockatrice.Cosmos
 
 
-DEFAULT_CONFIG = "$(@__DIR__)/../configs/line ar_gp"
+DEFAULT_CONFIG = "$(@__DIR__)/../configs/linear_gp.yaml"
 
 DEFAULT_TRACE = [
     Tracer(key="fitness:1", callback=(g -> g.fitness[1])),
@@ -53,6 +71,6 @@ end
 
 if !isinteractive()
     config = length(ARGS) > 0 ? ARGS[1] : DEFAULT_CONFIG
-    run(config)
+    launch(config)
 end
 

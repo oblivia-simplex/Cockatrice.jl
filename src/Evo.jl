@@ -5,6 +5,7 @@ using ..Names
 using ..Geo
 
 using RecursiveArrayTools
+using SharedArrays
 using Distributed
 using Dates
 
@@ -60,6 +61,27 @@ function init_fitness(template::Vector)
 end
 
 
+mutable struct Trace
+    d::Dict{String, SharedArray}
+    callbacks::Vector
+end
+
+
+function Trace(tracers, n_iterations, population_size)
+    arr_size = (nprocs(), n_iterations, population_size...)
+    d = [tr.key => SharedArray(fill(-Inf, arr_size...))
+         for tr in tracers] |> Dict
+    Trace(d, tracers)
+end
+
+
+function trace!(trace::Trace, evo::Evolution)
+    for tr in trace.tracers
+        trace.d[key][myid()][evo.iteration] = callback.(evo.geo.deme)
+    end
+end
+
+
 Base.@kwdef mutable struct Evolution
     config::NamedTuple
     logger
@@ -78,6 +100,7 @@ function Evolution(config::NamedTuple;
                    creature_type::DataType,
                    fitness::Function,
                    tracers=[],
+                   trace=nothing,
                    mutate::Function,
                    crossover::Function)
     logger = nothing # TODO
@@ -87,6 +110,7 @@ function Evolution(config::NamedTuple;
               geo=geo,
               fitness=fitness,
               tracers=tracers,
+              trace=trace,
               mutate=mutate,
               crossover=crossover)
 end

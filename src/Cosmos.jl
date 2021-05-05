@@ -41,12 +41,15 @@ function δ_init(;config="./config.yaml",
                 tracers=[],
                 workers=workers())::DArray
 
+    cfg = Config.parse(config)
+    trace = Evo.Trace(tracers, cfg.n_gen * 500, cfg.population.size)
     DArray((length(workers),), workers) do I
         [Evo.Evolution(config,
                        creature_type=creature_type,
                        fitness=fitness,
                        crossover=crossover,
                        mutate=mutate,
+                       trace=trace,
                        tracers=tracers)]
     end
 end

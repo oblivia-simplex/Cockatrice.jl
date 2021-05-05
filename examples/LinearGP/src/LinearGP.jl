@@ -6,6 +6,8 @@ using Cockatrice.Evo
 using Cockatrice.Names
 
 
+NUM_REGS = 20
+
 struct Inst
     op::Function
     arity::Int
@@ -27,7 +29,7 @@ end
 
 function Creature(config::NamedTuple)
     len = rand(config.genotype.min_len:config.genotype.max_len)
-    chromosome = [rand_inst(ops=OPS, num_regs=10) for _ in 1:len]
+    chromosome = [rand_inst(ops=OPS, num_regs=NUM_REGS) for _ in 1:len]
     fitness = Evo.init_fitness(config)
     Creature(chromosome=chromosome,
              effective_code=nothing,
@@ -78,7 +80,7 @@ end
 function mutate!(creature::Creature; config=nothing)
     inds = keys(creature.chromosome)
     i = rand(inds)
-    creature.chromosome[i] = rand_inst(ops=OPS, num_regs=10) # FIXME hardcoded
+    creature.chromosome[i] = rand_inst(ops=OPS, num_regs=NUM_REGS) # FIXME hardcoded
     return
 end
 
@@ -106,7 +108,7 @@ OPS = [
 ]
 
 
-function rand_inst(;ops=OPS, num_regs=10)
+function rand_inst(;ops=OPS, num_regs=NUM_REGS)
     op, arity = rand(ops)
     dst = rand(1:num_regs)
     src = rand(1:num_regs)
@@ -157,7 +159,11 @@ end
 module FF
 
 using RDatasets
+using DataFrames
+using CSV
 using ..LinearGP
+
+NUM_REGS = LinearGP.NUM_REGS
 
 function _get_categorical_dataset(name)
     data = dataset("datasets", "iris")
@@ -169,9 +175,11 @@ function _get_categorical_dataset(name)
     return data, classes
 end
 
-DATA, CLASSES = _get_categorical_dataset("iris")
+CLASSES = ["Free", "Vaccine", "Virus", "Data"]
+DATA = CSV.read("$(@__DIR__)/../data/digimon.csv", DataFrame)
 
-NUM_REGS = 10
+#DATA, CLASSES = _get_categorical_dataset("iris")
+
 
 function classify(g; strip_introns=true)
     regs = zeros(Float64, NUM_REGS) # FIXME shouldn't be hardcoded, pass config to ff?
