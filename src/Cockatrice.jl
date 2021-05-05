@@ -8,7 +8,10 @@ include("Geo.jl")
 include("Evo.jl")
 include("Cosmos.jl")
 include("examples/LinearGP.jl")
-include("Vis.jl")
+
+if "COCKATRICE_VIS" in ENV && ENV["COCKATRICE_VIS"] == 1
+    include("Vis.jl")
+end
 
 
 end # module

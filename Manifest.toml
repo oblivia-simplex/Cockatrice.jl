@@ -234,6 +234,12 @@ version = "1.12.16+3"
 deps = ["Mmap"]
 uuid = "8bb1440f-4735-579b-a4ab-409b98df4dab"
 
+[[Discretizers]]
+deps = ["DataStructures", "SpecialFunctions", "Statistics", "StatsBase"]
+git-tree-sha1 = "9bea86027a841227d53ab2dc1f0e2732b41a2593"
+uuid = "6e83dbb3-75ca-525b-8ae2-3751f0dd50b4"
+version = "3.2.1"
+
 [[Distances]]
 deps = ["LinearAlgebra", "Statistics", "StatsAPI"]
 git-tree-sha1 = "abe4ad222b26af3337262b8afb28fab8d215e9f8"
@@ -561,6 +567,12 @@ version = "0.23.3"
 git-tree-sha1 = "c2a145a145dc03a7620af1444e0264ef907bd44f"
 uuid = "9b13fd28-a010-5f03-acff-a1bbcff69959"
 version = "0.5.1"
+
+[[InformationMeasures]]
+deps = ["Discretizers"]
+git-tree-sha1 = "874d48f2026e8faf3fd55c86973fd028b02cd1a0"
+uuid = "96684042-fbdc-5399-9b8e-d34e539a126c"
+version = "0.3.1"
 
 [[IniFile]]
 deps = ["Test"]

@@ -25,7 +25,7 @@ function display_images(images; dims=(300,300), gui=nothing)
     show = ImageView.imshow
   end
   canvases = gui["canvas"]
-  
+
   for r in 1:rows
     for c in 1:cols
       i = r*c
