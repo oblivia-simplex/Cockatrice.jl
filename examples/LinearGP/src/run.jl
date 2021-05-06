@@ -1,18 +1,5 @@
 using Distributed
 
-#=
-@everywhere push!(LOAD_PATH, @__DIR__)
-@everywhere using Pkg
-@everywhere Pkg.activate("$(@__DIR__)/..")
-@everywhere Pkg.instantiate()
-@everywhere using DistributedArrays
-@everywhere using StatsBase
-@everywhere using Cockatrice.Config
-@everywhere using Cockatrice.Geo: Tracer
-@everywhere using Dates
-@everywhere include("$(@__DIR__)/LinearGP.jl")
-=#
-
 if nprocs() == 1
     addprocs(4, topology=:master_worker, exeflags="--project=$(Base.active_project())")
 end
@@ -38,16 +25,16 @@ using Cockatrice.Cosmos
 DEFAULT_CONFIG = "$(@__DIR__)/../configs/linear_gp.yaml"
 
 DEFAULT_TRACE = [
-    Tracer(key="fitness:1", callback=(g -> g.fitness[1])),
+    Tracer(key="fitness_1", callback=(g -> g.fitness[1])),
     Tracer(key="chromosome_len", callback=(g -> length(g.chromosome))),
     Tracer(key="num_offspring", callback=(g -> g.num_offspring)),
     Tracer(key="generation", callback=(g -> g.generation)),
 ]
 
 DEFAULT_LOGGERS = [
-    (key="fitness:1", reducer=Statistics.mean),
-    (key="fitness:1", reducer=Base.maximum),
-    (key="fitness:1", reducer=Statistics.std),
+    (key="fitness_1", reducer=Statistics.mean),
+    (key="fitness_1", reducer=Base.maximum),
+    (key="fitness_1", reducer=Statistics.std),
     (key="chromosome_len", reducer=Statistics.mean),
     (key="num_offspring", reducer=Base.maximum),
 ]
