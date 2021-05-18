@@ -179,7 +179,7 @@ end
 function step!(evo::Evolution; eval_children=false)
     ranking = Geo.tournament(evo.geo, evo.fitness)
     parents = evo.geo[ranking[end-1:end]]
-    children = evo.crossover(parents...)
+    children = evo.crossover(parents..., config=evo.config)
     if eval_children
         evo.fitness.(children)
     end

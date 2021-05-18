@@ -108,6 +108,16 @@ OPS = [
 ]
 
 
+BOOL_OPS = [
+    (⊻, 2),
+    (|, 2),
+    (&, 2),
+    (!, 1),
+    (constant(true), 0),
+    (constant(false), 0),
+]
+
+
 function rand_inst(;ops=OPS, num_regs=NUM_REGS)
     op, arity = rand(ops)
     dst = rand(1:num_regs)
@@ -116,7 +126,7 @@ function rand_inst(;ops=OPS, num_regs=NUM_REGS)
 end
 
 
-function evaluate_inst!(;regs::Vector{Float64}, inst::Inst)
+function evaluate_inst!(;regs::Vector, inst::Inst)
     if inst.arity == 2
         args = regs[[inst.dst, inst.src]]
     elseif inst.arity == 1
@@ -128,7 +138,7 @@ function evaluate_inst!(;regs::Vector{Float64}, inst::Inst)
 end
 
 
-function evaluate(;regs::Vector{Float64}, args::Vector{Float64}, code::Vector)
+function evaluate(;regs::Vector, args::Vector, code::Vector)
     regs = copy(regs)
     regs[1:length(args)] = args
     for inst in code
