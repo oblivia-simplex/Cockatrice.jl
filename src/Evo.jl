@@ -178,30 +178,34 @@ end
 
 function step!(evo::Evolution; eval_children=false)
     ranking = Geo.tournament(evo.geo, evo.fitness)
-    parents = evo.geo[ranking[end-1:end]]
+    parent_indices = ranking[end-1:end]
+    parents = evo.geo[parent_indices]
     children = evo.crossover(parents..., config=evo.config)
-    if eval_children
-        evo.fitness.(children)
-    end
     for child in children
         if rand() < evo.config.genotype.mutation_rate
             evo.mutate(child, config=evo.config)
         end
+    end
+    if eval_children
+        evo.fitness.(children)
     end
     graves = ranking[1:2]
     evo.geo[graves] = children
     preserve_elites!(evo)
     evo.iteration += 1
     trace!(evo)
-    return
+    return (parents=parent_indices, children=graves)
 end
 
 
-function step_for_duration!(evo, duration; kwargs...)
+function step_for_duration!(evo, duration; step=nothing, kwargs...)
+    if isnothing(step)
+        step = step!
+    end
     start = now()
     start_iter = evo.iteration
     while now() - start < duration
-        Evo.step!(evo; kwargs...)
+        step(evo; kwargs...)
     end
     iters = evo.iteration - start_iter
     return iters

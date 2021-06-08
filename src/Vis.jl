@@ -17,7 +17,7 @@ end
 
 
 
-function trace_video(evo::Evolution; key="fitness:1", color=colorant"green")
+function trace_video(evo::Evolution; key="fitness_1", color=colorant"green")
     trace = process_images(evo.trace[key])
     fvec = VectorOfArray(trace)
     video = convert(Array, fvec)

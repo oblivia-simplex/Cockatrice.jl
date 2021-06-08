@@ -13,8 +13,8 @@ Evolution = Evo.Evolution
 World = DArray{Evo.Evolution,1,Array{Evo.Evolution,1}}
 
 
-function δ_step_for_duration!(E::World, duration::TimePeriod; kwargs...)
-    futs = [@spawnat w Evo.step_for_duration!(E[:L][1], duration; kwargs...) for w in procs(E)]
+function δ_step_for_duration!(E::World, duration::TimePeriod; step, kwargs...)
+    futs = [@spawnat w Evo.step_for_duration!(E[:L][1], step, duration; kwargs...) for w in procs(E)]
     iters = asyncmap(fetch, futs)
     if rand() < 0.1
         extra = iters .- minimum(iters) |> sum
@@ -24,7 +24,8 @@ function δ_step_for_duration!(E::World, duration::TimePeriod; kwargs...)
 end
 
 
-function δ_step!(E::World; kwargs...)
+function δ_step!(E::World; step, kwargs...)
+    if isnothing(step) step = Evo.step! end
     futs = [@spawnat w Evo.step!(E[:L][1]; kwargs...) for w in procs(E)]
     asyncmap(fetch, futs)
     return
@@ -93,6 +94,7 @@ function δ_run(;config::NamedTuple,
                mutate::Function,
                crossover::Function,
                creature_type::DataType,
+               step::Function=Evo.step!,
                kwargs...)
 
     table = create_stats_table(loggers)
@@ -107,7 +109,7 @@ function δ_run(;config::NamedTuple,
 
     for i in 1:config.n_gen
         #δ_step!(E; kwargs...)
-        δ_step_for_duration!(E, Second(1); kwargs...)
+        δ_step_for_duration!(E, Second(1); step=step, kwargs...)
 
         # Migration
         if rand() < config.population.migration_rate
