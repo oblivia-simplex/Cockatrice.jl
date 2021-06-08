@@ -198,9 +198,11 @@ function step!(evo::Evolution; eval_children=false)
 end
 
 
-function step_for_duration!(evo, duration; step=nothing, kwargs...)
-    if isnothing(step)
+function step_for_duration!(evo, duration; kwargs...)
+    if !(:step ∈ keys(kwargs))
         step = step!
+    else
+        step = kwargs.data.step
     end
     start = now()
     start_iter = evo.iteration
