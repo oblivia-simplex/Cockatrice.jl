@@ -204,6 +204,7 @@ function step_for_duration!(evo, duration; kwargs...)
     else
         step = kwargs.data.step
     end
+    @show step
     start = now()
     start_iter = evo.iteration
     while now() - start < duration
