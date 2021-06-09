@@ -5,7 +5,9 @@ using Distributed
 using DistributedArrays
 using StatsBase
 using Dates
+using CSV
 using DataFrames
+using ..Names
 using ..Evo
 using ..Config
 
@@ -85,10 +87,10 @@ end
 
 function make_log_path(name=Names.rand_name(2))
     stem = "log"
-    now = now()
-    dir = @sprintf "%s/%04d/%02d/%02d/" stem year(now) month(now) day(now)
+    n = now()
+    dir = @sprintf "%s/%04d/%02d/%02d/" stem year(n) month(n) day(n)
     mkpath(dir)
-    file = @sprintf "%s.%02d-%02d.csv" name hour(now) minute(now)
+    file = @sprintf "%s.%02d-%02d.csv" name hour(n) minute(n)
     dir * file
 end
 
@@ -99,15 +101,15 @@ struct Logger
     name::String
 end
 
-function Logger(loggers::Vector{NamedTuple}, name=Names.rand_name(2))
-    Loggers(make_stats_table(loggers), make_log_path(name), name)
+function Logger(loggers, name=Names.rand_name(2))
+    Logger(make_stats_table(loggers), make_log_path(name), name)
 end
 
 function log!(L::Logger, row)
     records = size(L.table, 1)
     append = records > 0
     push!(L.table, row)
-    CSV.write(L.csv_path, [L.table[end, :]], append=append)
+    CSV.write(L.csv_path, [L.table[end, :]], writeheader=!append, append=append)
     return records
 end
 
