@@ -99,12 +99,8 @@ struct Logger
     name::String
 end
 
-function Logger(loggers::Vector{NamedTuple}, name::String)
-    Loggers(make_stats_table(loggers), make_log_path(name))
-end
-
-function Logger(loggers::Vector{NamedTuple})
-    Loggers(make_stats_table(loggers))
+function Logger(loggers::Vector{NamedTuple}, name=Names.rand_name(2))
+    Loggers(make_stats_table(loggers), make_log_path(name), name)
 end
 
 function log!(L::Logger, row)
