@@ -5,6 +5,7 @@ using ..Names
 using ..Geo
 
 using RecursiveArrayTools
+using InformationMeasures
 using SharedArrays
 using Distributed
 using Dates
@@ -176,7 +177,18 @@ function trace!(evo::Evolution)
     end
 end
 
-function step!(evo::Evolution; eval_children=false)
+
+function likeness(a, b)
+    if a == b
+        return 1.0
+    end
+    e = get_entropy(a)
+    m = get_mutual_information(a, b)
+    iszero(e) ? m : m / e
+end
+
+
+function step!(evo::Evolution; eval_children=true, measure_likeness=true)
     ranking = Geo.tournament(evo.geo, evo.fitness)
     parent_indices = ranking[end-1:end]
     parents = evo.geo[parent_indices]
@@ -194,6 +206,17 @@ function step!(evo::Evolution; eval_children=false)
     preserve_elites!(evo)
     evo.iteration += 1
     trace!(evo)
+
+    if measure_likeness
+        parents = evo.geo[parent_indices]
+        children = evo.geo[graves]
+        # now, measure mutual information
+        for child in children
+            child.parents = [p.name for p in parents]
+            child.likeness = [likeness(p.phenotype, child.phenotype) for p in parents]
+        end
+    end
+
     return (parents=parent_indices, children=graves)
 end
 
@@ -204,7 +227,6 @@ function step_for_duration!(evo, duration; kwargs...)
     else
         step = kwargs.data.step
     end
-    @show step
     start = now()
     start_iter = evo.iteration
     while now() - start < duration

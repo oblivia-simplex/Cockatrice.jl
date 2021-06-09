@@ -1,5 +1,6 @@
 module Cosmos
 
+using Printf
 using Distributed
 using DistributedArrays
 using StatsBase
@@ -75,19 +76,46 @@ function δ_init(;config=nothing,
 end
 
 
-#function δ_run(;genotype_module::Module,
-#               kwargs...)
-#    δ_run(;creature_type=genotype_module.Creature,
-#          crossover=genotype_module.crossover,
-#          mutate=genotype_module.mutate!,
-#          kwargs...)
-#end
-#
 
-function create_stats_table(loggers)
+function make_stats_table(loggers)
     cols = [Symbol("$(lg.key)_$(nameof(lg.reducer))") for lg in loggers]
     DataFrame([c => [] for c in cols]...)
 end
+
+
+function make_log_path(name=Names.rand_name(2))
+    stem = "log"
+    now = now()
+    dir = @sprintf "%s/%04d/%02d/%02d/" stem year(now) month(now) day(now)
+    mkpath(dir)
+    file = @sprintf "%s.%02d-%02d.csv" name hour(now) minute(now)
+    dir * file
+end
+
+
+struct Logger
+    table::DataFrame
+    csv_path::String
+    name::String
+end
+
+function Logger(loggers::Vector{NamedTuple}, name::String)
+    Loggers(make_stats_table(loggers), make_log_path(name))
+end
+
+function Logger(loggers::Vector{NamedTuple})
+    Loggers(make_stats_table(loggers))
+end
+
+function log!(L::Logger, row)
+    records = size(L.table, 1)
+    append = records > 0
+    push!(L.table, row)
+    CSV.write(L.csv_path, [L.table[end, :]], append=append)
+    return records
+end
+
+
 
 
 function δ_run(;config::NamedTuple,
@@ -98,10 +126,13 @@ function δ_run(;config::NamedTuple,
                mutate::Function,
                crossover::Function,
                creature_type::DataType,
-               step::Function=Evo.step!,
                kwargs...)
 
-    table = create_stats_table(loggers)
+    if :experiment ∈ keys(config)
+        LOGGER = Logger(loggers, config.experiment)
+    else
+        LOGGER = Logger(loggers)
+    end
 
     E = δ_init(config=config,
                fitness=fitness,
@@ -133,9 +164,11 @@ function δ_run(;config::NamedTuple,
         for logger in loggers
             stat = δ_stats(E, key=logger.key, ϕ=logger.reducer)
             push!(s, stat)
-            println("[$(i)] $(nameof(logger.reducer)) $(logger.key): $(stat)")
+            #println("[$(i)] $(nameof(logger.reducer)) $(logger.key): $(stat)")
         end
-        push!(table, s)
+        println("Logging to $(LOGGER.csv_path)...")
+        log!(LOGGER, s)
+        println(LOGGER.table[end, :])
         # FIXME: this is just a placeholder for logging, which will be customized
         # by the client code.
     end
