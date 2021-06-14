@@ -141,7 +141,6 @@ function δ_run(;config::NamedTuple,
                mutate=mutate)
 
     for i in 1:config.n_gen
-        #δ_step!(E; kwargs...)
         δ_step_for_duration!(E, Second(1); kwargs...)
 
         # Migration
@@ -160,9 +159,7 @@ function δ_run(;config::NamedTuple,
 
         s = []
         for logger in loggers
-            stat = δ_stats(E, key=logger.key, ϕ=logger.reducer)
-            push!(s, stat)
-            #println("[$(i)] $(nameof(logger.reducer)) $(logger.key): $(stat)")
+            push!(s, δ_stats(E, key=logger.key, ϕ=logger.reducer))
         end
         println("Logging to $(LOGGER.csv_path)...")
         log!(LOGGER, s)
@@ -170,7 +167,7 @@ function δ_run(;config::NamedTuple,
         # FIXME: this is just a placeholder for logging, which will be customized
         # by the client code.
     end
-    return E, table
+    return E, Logger
 end
 
 
