@@ -4,11 +4,12 @@ using RecursiveArrayTools
 using ImageView, Gtk.ShortNames, Images
 using ..Evo
 
-function process_images(arr, color=false)
+function process_images(arr; color=nothing)
     m = maximum.(arr) |> maximum
     normed = m > 0.0 ? arr ./ m : arr
-    finite = (A -> (a -> isfinite(a) ? a : 0.0).(A)).(arr)
-    if colored
+    finite = (A -> (a -> isfinite(a) ? Float64(a) : 0.0).(A)).(arr)
+    @show typeof(finite)
+    if color !== nothing
         finite .* color
     else
         finite
@@ -18,7 +19,7 @@ end
 
 
 function trace_video(evo::Evolution; key="fitness_1", color=colorant"green")
-    trace = process_images(evo.trace[key])
+    trace = process_images(evo.trace[key], color=color)
     fvec = VectorOfArray(trace)
     video = convert(Array, fvec)
     AxisArray(video)

@@ -213,7 +213,7 @@ function step!(evo::Evolution; eval_children=true, measure_likeness=true)
         # now, measure mutual information
         for child in children
             child.parents = [p.name for p in parents]
-            child.likeness = [likeness(p.phenotype, child.phenotype) for p in parents]
+            child.likeness = [likeness(p.phenotype.results, child.phenotype.results) for p in parents]
         end
     end
 
