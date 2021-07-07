@@ -188,8 +188,8 @@ function likeness(a, b)
 end
 
 
-function step!(evo::Evolution; eval_children=true, measure_likeness=true)
-    ranking = Geo.tournament(evo.geo, evo.fitness)
+function step!(evo::Evolution; eval_children=true, measure_likeness=true, interaction_matrix=nothing)
+    ranking = Geo.tournament(evo.geo, evo.fitness, interaction_matrix=interaction_matrix)
     parent_indices = ranking[end-1:end]
     parents = evo.geo[parent_indices]
     children = evo.crossover(parents..., config=evo.config)
@@ -199,7 +199,9 @@ function step!(evo::Evolution; eval_children=true, measure_likeness=true)
         end
     end
     if eval_children
-        evo.fitness.(children)
+        for child in children
+            evo.fitness(child, config=evo.config, interaction_matrix=interaction_matrix)
+        end
     end
     graves = ranking[1:2]
     evo.geo[graves] = children

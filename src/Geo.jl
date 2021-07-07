@@ -115,10 +115,10 @@ end
 """
 Returns a vector of indices, sorted according to fitness.
 """
-function tournament(geo::Geography, fitness_function::Function)
+function tournament(geo::Geography, fitness_function::Function, interaction_matrix=nothing)
   indices = choose_combatants(geo, geo.config.selection.t_size)
   for i in indices
-    geo.deme[i].fitness = fitness_function(geo.deme[i], config=geo.config)
+    geo.deme[i].fitness = fitness_function(geo.deme[i], config=geo.config, interaction_matrix=interaction_matrix)
   end
   sort(indices, by = i -> geo.deme[i].fitness)
 end
