@@ -49,30 +49,33 @@ function δ_stats(E::World; key="fitness_1", ϕ=mean)
     asyncmap(fetch, futs) |> ϕ
 end
 
-#=
-function δ_stats(E::World; key="fitness_1", ϕ=mean)
-    #fut = @spawnat 2 E[:L][1].trace2.d[key][2:end, E[:L][1].iteration, :, :]
-    fut = @spawnat 2 Evo.slice(E[:L][1].trace2, key=key, iteration=E[:L][1].iteration)
-    arr = fetch(fut)
-    filter(isfinite, arr) |> ϕ
+
+function get_stats(evo; key="fitness_1", ϕ=mean)
+    evo.trace[key][end] |> ϕ
 end
-=#
+
+function δ_check_stopping_condition(E::World, condition::Function)
+    futs = [@spawnat w condition(E[:L][1]) for w in procs(E)]
+    asyncmap(fetch, futs) |> findfirst
+end
 
 function δ_init(;config=nothing,
                 fitness::Function=(_) -> [rand()],
                 crossover::Function,
                 mutate::Function,
+                objective_performance::Function,
                 creature_type::DataType,
                 tracers=[],
                 workers=workers())::DArray
 
-    #trace = Evo.Trace(tracers, config.n_gen * 500, config.population.size)
+    #trace = Evo.Trace(tracers, config.experiment_duration * 500, config.population.size)
     DArray((length(workers),), workers) do I
         [Evo.Evolution(config,
                        creature_type=creature_type,
                        fitness=fitness,
                        crossover=crossover,
                        mutate=mutate,
+                       objective_performance=objective_performance,
                        tracers=tracers)]
     end
 end
@@ -124,7 +127,63 @@ function δ_run(;config::NamedTuple,
                mutate::Function,
                crossover::Function,
                creature_type::DataType,
+               stopping_condition::Function,
+               objective_performance::Function,
                kwargs...)
+
+    if :experiment ∈ keys(config)
+        LOGGER = Logger(loggers, config.experiment)
+    else
+        LOGGER = Logger(loggers)
+    end
+
+    evo = Evo.Evolution(config,
+                        creature_type=creature_type,
+                        fitness=fitness,
+                        crossover=crossover,
+                        mutate=mutate,
+                        objective_performance=objective_performance,
+                        tracers=tracers)
+
+    for i in 1:config.experiment_duration
+        if stopping_condition(evo)
+            @info "Stopping condition reached after $(evo.iteration) iterations."
+            break
+        end
+
+        Evo.step_for_duration!(E, Second(1); kwargs...)
+
+
+        # Logging
+        if i % config.logging.log_every != 0
+            continue
+        end
+
+        s = []
+        for logger in loggers
+            push!(s, stats(evo, key=logger.key, ϕ=logger.reducer))
+        end
+        println("Logging to $(LOGGER.csv_path)...")
+        log!(LOGGER, s)
+        println(LOGGER.table[end, :])
+        # FIXME: this is just a placeholder for logging, which will be customized
+        # by the client code.
+    end
+    return evo, LOGGER
+end
+
+
+function run(;config::NamedTuple,
+                            fitness::Function,
+                            workers=workers(),
+                            tracers=[],
+                            loggers=[],
+                            mutate::Function,
+                            crossover::Function,
+                            creature_type::DataType,
+                            stopping_condition::Function,
+                            objective_performance::Function,
+                            kwargs...)
 
     if :experiment ∈ keys(config)
         LOGGER = Logger(loggers, config.experiment)
@@ -138,9 +197,14 @@ function δ_run(;config::NamedTuple,
                creature_type=creature_type,
                tracers=tracers,
                crossover=crossover,
-               mutate=mutate)
+               mutate=mutate,
+               objective_performance=objective_performance)
 
-    for i in 1:config.n_gen
+    for i in 1:config.experiment_duration
+        if (isle = δ_check_stopping_condition(E, stopping_condition)) !== nothing
+            @info "Stopping condition reached on Island $(isle)!"
+            break
+        end
         δ_step_for_duration!(E, Second(1); kwargs...)
 
         # Migration
@@ -167,7 +231,7 @@ function δ_run(;config::NamedTuple,
         # FIXME: this is just a placeholder for logging, which will be customized
         # by the client code.
     end
-    return E, Logger
+    return E, LOGGER
 end
 
 

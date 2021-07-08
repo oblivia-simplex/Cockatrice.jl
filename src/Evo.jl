@@ -122,6 +122,7 @@ Base.@kwdef mutable struct Evolution
     trace::Dict = Dict()
     mutate::Function
     crossover::Function
+    objective_performance::Function
 end
 
 
@@ -130,7 +131,8 @@ function Evolution(config::NamedTuple;
                    fitness::Function,
                    tracers=[],
                    mutate::Function,
-                   crossover::Function)
+                   crossover::Function,
+                   objective_performance::Function)
     logger = nothing # TODO
     geo = Geo.Geography(creature_type, config)
     Evolution(config=config,
@@ -139,7 +141,8 @@ function Evolution(config::NamedTuple;
               fitness=fitness,
               tracers=tracers,
               mutate=mutate,
-              crossover=crossover)
+              crossover=crossover,
+              objective_performance=objective_performance)
 end
 
 
@@ -150,7 +153,7 @@ end
 
 
 function preserve_elites!(evo::Evolution)
-  pop = sort(unique(g->g.name, [vec(evo.geo); evo.elites]), by=(x -> x.fitness))
+  pop = sort(unique(g->g.name, [vec(evo.geo); evo.elites]), by=evo.objective_performance)
   n_elites = evo.config.population.n_elites
   evo.elites = [deepcopy(pop[end-i]) for i in 0:(n_elites-1)]
 end
@@ -200,7 +203,7 @@ function step!(evo::Evolution; eval_children=true, measure_likeness=true, intera
     end
     if eval_children
         for child in children
-            evo.fitness(child, config=evo.config, interaction_matrix=interaction_matrix)
+            evo.fitness(evo.geo, child)
         end
     end
     graves = ranking[1:2]
@@ -224,15 +227,10 @@ end
 
 
 function step_for_duration!(evo, duration; kwargs...)
-    if !(:step ∈ keys(kwargs))
-        step = step!
-    else
-        step = kwargs.data.step
-    end
     start = now()
     start_iter = evo.iteration
     while now() - start < duration
-        step(evo; kwargs...)
+        step!(evo; kwargs...)
     end
     iters = evo.iteration - start_iter
     return iters
