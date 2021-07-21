@@ -168,7 +168,7 @@ function trace!(evo::Evolution, callback::Function, key::String, sampling_rate::
     if !(key ∈ keys(evo.trace))
         evo.trace[key] = []
     end
-    if rand() <= sampling_rate
+    if isempty(evo.trace[key]) || rand() <= sampling_rate
         push!(evo.trace[key], callback.(evo.geo.deme))
     end
 end
@@ -201,13 +201,13 @@ function step!(evo::Evolution; eval_children=true, measure_likeness=true, intera
             evo.mutate(child, config=evo.config)
         end
     end
-    if eval_children
-        for child in children
-            evo.fitness(evo.geo, child)
-        end
-    end
     graves = ranking[1:2]
     evo.geo[graves] = children
+    if eval_children
+        for child_index in graves
+            evo.fitness(evo.geo, child_index)
+        end
+    end
     preserve_elites!(evo)
     evo.iteration += 1
     trace!(evo)

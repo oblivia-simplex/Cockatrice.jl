@@ -1,6 +1,7 @@
 module Geo
 
 using StatsBase
+using BijectiveHilbert
 using Memoize
 using Distributed
 using RecursiveArrayTools
@@ -16,6 +17,7 @@ Base.@kwdef mutable struct Geography{G,N}
     toroidal::Bool
     locality::Int
     config::NamedTuple
+    interaction_matrix = nothing
 end
 
 
@@ -38,6 +40,18 @@ function Geography(
         config = config,
     )
 end
+
+
+# This looks a bit hairy, and can almost certainly be optimized
+function hilbert_indices(geo)
+    inds = [encode_hilbert(Simple2D(Int), [x for x in Tuple(i)]) for i in geo.indices]
+    sort(reshape(geo.indices, prod(size(evoL.geo.indices))), by=i->inds[i])
+end
+
+function encode_hilbert_index(i)
+    encode_hilbert(Simple2D(Int), [x for x in Tuple(i)])
+end
+
 
 
 function diagonal_size(array)::Float64
@@ -116,11 +130,16 @@ end
 Returns a vector of indices, sorted according to fitness.
 """
 function tournament(geo::Geography, fitness_function::Function; interaction_matrix=nothing)
-  indices = choose_combatants(geo, geo.config.selection.t_size)
-  for i in indices
-      geo.deme[i].fitness = fitness_function(geo, geo.deme[i])
-  end
-  sort(indices, by = i -> geo.deme[i].fitness)
+    indices = choose_combatants(geo, geo.config.selection.t_size)
+    for i in indices
+        geo.deme[i].fitness = fitness_function(geo, i)
+    end
+
+    attrs = geo.config.selection.lexical ?
+        eachindex(geo.deme[indices[1].fitness]) :
+        sort(eachindex(geo.deme[indices[1]].fitness), by=_->rand())
+
+    sort(indices, by = i -> geo.deme[i].fitness[attrs])
 end
 
 

@@ -1,15 +1,18 @@
 module Cosmos
 
 using Printf
+using Serialization
 using Distributed
 using DistributedArrays
 using StatsBase
 using Dates
 using CSV
+using Images
 using DataFrames
 using ..Names
 using ..Evo
 using ..Config
+using ..Vis
 
 
 Evolution = Evo.Evolution
@@ -43,10 +46,23 @@ DEFAULT_LOGGERS = [
     (key="fitness_1", reducer=StatsBase.mean),
 ]
 
+
+
+
 function δ_stats(E::World; key="fitness_1", ϕ=mean)
-    futs = [@spawnat w (filter(isfinite, E[:L][1].trace[key][end]) 
-                        |> ϕ) for w in procs(E)]
-    asyncmap(fetch, futs) |> ϕ
+    futs = [@spawnat w begin
+            m = filter(isfinite, E[:L][1].trace[key][end])
+            isempty(m) ? -Inf : ϕ(m)
+            end
+            for w in procs(E)]
+    m = asyncmap(fetch, futs)
+    isempty(m) ? -Inf : ϕ(m)
+end
+
+
+function δ_interaction_matrices(E::World)
+    futs = [@spawnat w copy(E[:L][1].geo.interaction_matrix) for w in procs(E)]
+    asyncmap(fetch, futs)
 end
 
 
@@ -84,42 +100,57 @@ end
 
 function make_stats_table(loggers)
     cols = [Symbol("$(lg.key)_$(nameof(lg.reducer))") for lg in loggers]
+    cols = [:iteration_mean; cols]
     DataFrame([c => [] for c in cols]...)
 end
 
 
-function make_log_path(name=Names.rand_name(2))
+function make_log_dir()
     stem = "log"
     n = now()
     dir = @sprintf "%s/%04d/%02d/%02d/" stem year(n) month(n) day(n)
     mkpath(dir)
-    file = @sprintf "%s.%02d-%02d.csv" name hour(n) minute(n)
-    dir * file
+    return dir
 end
 
+function make_csv_filename(name=Names.rand_name(2))
+    n = now()
+    @sprintf "%s.%02d-%02d.csv" name hour(n) minute(n)
+end
+
+
+function make_dump_path(L)
+    "$(L.log_dir)/$(L.name).dump"
+end
 
 struct Logger
     table::DataFrame
-    csv_path::String
+    log_dir::String
+    csv_name::String
     name::String
 end
 
+
 function Logger(loggers, name=Names.rand_name(2))
-    Logger(make_stats_table(loggers), make_log_path(name), name)
+    Logger(make_stats_table(loggers), make_log_dir(), make_csv_filename(name), name)
 end
 
 function log!(L::Logger, row)
     records = size(L.table, 1)
     append = records > 0
     push!(L.table, row)
-    CSV.write(L.csv_path, [L.table[end, :]], writeheader=!append, append=append)
+    CSV.write("$(L.log_dir)/$(L.csv_name)", [L.table[end, :]], writeheader=!append, append=append)
     return records
 end
 
 
+function dump(L, obj)
+    Serialization.serialize(make_dump_path(L), obj)
+end
 
 
-function δ_run(;config::NamedTuple,
+
+function run(;config::NamedTuple,
                fitness::Function,
                workers=workers(),
                tracers=[],
@@ -145,13 +176,15 @@ function δ_run(;config::NamedTuple,
                         objective_performance=objective_performance,
                         tracers=tracers)
 
+    IM_log = []
+
     for i in 1:config.experiment_duration
         if stopping_condition(evo)
             @info "Stopping condition reached after $(evo.iteration) iterations."
             break
         end
 
-        Evo.step_for_duration!(E, Second(1); kwargs...)
+        Evo.step_for_duration!(evo, Second(config.step_duration); kwargs...)
 
 
         # Logging
@@ -159,31 +192,35 @@ function δ_run(;config::NamedTuple,
             continue
         end
 
+        push!(IM_log, copy(evo.geo.interaction_matrix))
+
         s = []
         for logger in loggers
-            push!(s, stats(evo, key=logger.key, ϕ=logger.reducer))
+            push!(s, get_stats(evo, key=logger.key, ϕ=logger.reducer))
         end
-        println("Logging to $(LOGGER.csv_path)...")
+        println("Logging to $(LOGGER.log_dir)/$(LOGGER.csv_name)...")
         log!(LOGGER, s)
         println(LOGGER.table[end, :])
         # FIXME: this is just a placeholder for logging, which will be customized
         # by the client code.
     end
-    return evo, LOGGER
+    return evo, LOGGER, IM_log
 end
 
 
-function run(;config::NamedTuple,
-                            fitness::Function,
-                            workers=workers(),
-                            tracers=[],
-                            loggers=[],
-                            mutate::Function,
-                            crossover::Function,
-                            creature_type::DataType,
-                            stopping_condition::Function,
-                            objective_performance::Function,
-                            kwargs...)
+function δ_run(;config::NamedTuple,
+               fitness::Function,
+               workers=workers(),
+               tracers=[],
+               loggers=[],
+               mutate::Function,
+               crossover::Function,
+               creature_type::DataType,
+               stopping_condition::Function,
+               objective_performance::Function,
+               kwargs...)
+
+    started_at = now()
 
     if :experiment ∈ keys(config)
         LOGGER = Logger(loggers, config.experiment)
@@ -200,12 +237,10 @@ function run(;config::NamedTuple,
                mutate=mutate,
                objective_performance=objective_performance)
 
+    IM_log = []
+    gui = nothing
     for i in 1:config.experiment_duration
-        if (isle = δ_check_stopping_condition(E, stopping_condition)) !== nothing
-            @info "Stopping condition reached on Island $(isle)!"
-            break
-        end
-        δ_step_for_duration!(E, Second(1); kwargs...)
+        δ_step_for_duration!(E, Second(config.step_duration); kwargs...)
 
         # Migration
         if rand() < config.population.migration_rate
@@ -221,17 +256,30 @@ function run(;config::NamedTuple,
             continue
         end
 
-        s = []
+        mean_iteration = asyncmap(fetch,
+                                  [@spawnat w E[:L][1].iteration for w in procs(E)]
+                                  ) |> mean
+        s = [mean_iteration]
         for logger in loggers
             push!(s, δ_stats(E, key=logger.key, ϕ=logger.reducer))
         end
-        println("Logging to $(LOGGER.csv_path)...")
+        @info("Logging to $(LOGGER.log_dir)/$(LOGGER.csv_name)...")
         log!(LOGGER, s)
         println(LOGGER.table[end, :])
-        # FIXME: this is just a placeholder for logging, which will be customized
-        # by the client code.
+
+        ims = δ_interaction_matrices(E)
+        push!(IM_log, ims)
+        images = [Gray.(im) for im in ims]
+        gui = Vis.display_images(reshape(images, (2, length(ims)÷2)), gui=gui)
+
+        if (isle = δ_check_stopping_condition(E, stopping_condition)) !== nothing
+            @info "Stopping condition reached on Island $(isle)!"
+            break
+        end
+
+        @info "Total time elapsed: $(now() - started_at)"
     end
-    return E, LOGGER
+    return E, LOGGER, IM_log
 end
 
 
