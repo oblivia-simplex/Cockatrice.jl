@@ -5,6 +5,7 @@ using BijectiveHilbert
 using Memoize
 using Distributed
 using RecursiveArrayTools
+using ..Pareto
 
 
 export Geography, tournament
@@ -14,6 +15,7 @@ export Geography, tournament
 Base.@kwdef mutable struct Geography{G,N}
     deme::Array{G,N}
     indices::CartesianIndices
+    hilbert_indices::Vector
     toroidal::Bool
     locality::Int
     config::NamedTuple
@@ -30,11 +32,14 @@ function Geography(
     @info "Generating distributed population of $dimstr ($(prod(config.population.size))) genomes..."
 
     indices = CartesianIndices(Tuple(config.population.size))
+    hilbert_indices = generate_hilbert_indices(indices) 
+    #indices = reshape(indices, prod(config.population.size)) |> collect
     deme = [constructor(config) for _ in indices]
 
     return Geography(
         deme = deme,
         indices = indices,
+        hilbert_indices = hilbert_indices,
         locality = config.population.locality,
         toroidal = config.population.toroidal,
         config = config,
@@ -43,13 +48,15 @@ end
 
 
 # This looks a bit hairy, and can almost certainly be optimized
-function hilbert_indices(geo)
-    inds = [encode_hilbert(Simple2D(Int), [x for x in Tuple(i)]) for i in geo.indices]
-    sort(reshape(geo.indices, prod(size(evoL.geo.indices))), by=i->inds[i])
+function generate_hilbert_indices(indices)
+    inds = [encode_hilbert(Simple2D(Int), [x for x in Tuple(i)]) for i in indices]
+    sort(reshape(indices, prod(size(indices))), by=i->inds[i]) |> collect
 end
 
-function encode_hilbert_index(i)
-    encode_hilbert(Simple2D(Int), [x for x in Tuple(i)])
+# FIXME: this is only well defined for 2d geographies.
+
+function hilbert_index(geo, i)
+    findfirst(x -> x == i, geo.hilbert_indices)
 end
 
 
@@ -129,7 +136,7 @@ end
 """
 Returns a vector of indices, sorted according to fitness.
 """
-function tournament(geo::Geography, fitness_function::Function; interaction_matrix=nothing)
+function tournament(geo::Geography, fitness_function::Function)
     indices = choose_combatants(geo, geo.config.selection.t_size)
     for i in indices
         geo.deme[i].fitness = fitness_function(geo, i)
@@ -140,6 +147,13 @@ function tournament(geo::Geography, fitness_function::Function; interaction_matr
         sort(eachindex(geo.deme[indices[1]].fitness), by=_->rand())
 
     sort(indices, by = i -> geo.deme[i].fitness[attrs])
+end
+
+
+function pareto_fronts(geo::Geography)
+    indices = reshape(geo.indices, prod(size(geo.indices)))
+    fronts = Pareto.nonDominatedSorting(indices, by=i->geo.deme[i].fitness)
+    [indices[f] for f in fronts]
 end
 
 

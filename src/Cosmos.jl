@@ -13,6 +13,7 @@ using ..Names
 using ..Evo
 using ..Config
 using ..Vis
+using ..Logging
 
 
 Evolution = Evo.Evolution
@@ -94,58 +95,6 @@ function δ_init(;config=nothing,
                        objective_performance=objective_performance,
                        tracers=tracers)]
     end
-end
-
-
-
-function make_stats_table(loggers)
-    cols = [Symbol("$(lg.key)_$(nameof(lg.reducer))") for lg in loggers]
-    cols = [:iteration_mean; cols]
-    DataFrame([c => [] for c in cols]...)
-end
-
-
-function make_log_dir()
-    stem = "log"
-    n = now()
-    dir = @sprintf "%s/%04d/%02d/%02d/" stem year(n) month(n) day(n)
-    mkpath(dir)
-    return dir
-end
-
-function make_csv_filename(name=Names.rand_name(2))
-    n = now()
-    @sprintf "%s.%02d-%02d.csv" name hour(n) minute(n)
-end
-
-
-function make_dump_path(L)
-    "$(L.log_dir)/$(L.name).dump"
-end
-
-struct Logger
-    table::DataFrame
-    log_dir::String
-    csv_name::String
-    name::String
-end
-
-
-function Logger(loggers, name=Names.rand_name(2))
-    Logger(make_stats_table(loggers), make_log_dir(), make_csv_filename(name), name)
-end
-
-function log!(L::Logger, row)
-    records = size(L.table, 1)
-    append = records > 0
-    push!(L.table, row)
-    CSV.write("$(L.log_dir)/$(L.csv_name)", [L.table[end, :]], writeheader=!append, append=append)
-    return records
-end
-
-
-function dump(L, obj)
-    Serialization.serialize(make_dump_path(L), obj)
 end
 
 
@@ -269,6 +218,7 @@ function δ_run(;config::NamedTuple,
 
         ims = δ_interaction_matrices(E)
         push!(IM_log, ims)
+        log_ims(LOGGER, ims, i)
         images = [Gray.(im) for im in ims]
         gui = Vis.display_images(reshape(images, (2, length(ims)÷2)), gui=gui)
 

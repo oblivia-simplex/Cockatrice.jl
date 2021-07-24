@@ -191,8 +191,21 @@ function likeness(a, b)
 end
 
 
-function step!(evo::Evolution; eval_children=true, measure_likeness=true, interaction_matrix=nothing)
-    ranking = Geo.tournament(evo.geo, evo.fitness, interaction_matrix=interaction_matrix)
+function pareto_step!(evo::Evolution)
+    for i in evo.geo.indices
+        evo.fitness(evo.geo, i)
+    end
+    fronts = Geo.pareto_fronts(evo.geo)
+    # then pair off parents from the fronts until you have enough
+    # parents to produce the next generation.
+    # TODO
+
+end
+
+## TODO: eval_children should be a config field.
+# So should measure_likeness.
+function step!(evo::Evolution; eval_children=true, measure_likeness=false)
+    ranking = Geo.tournament(evo.geo, evo.fitness)
     parent_indices = ranking[end-1:end]
     parents = evo.geo[parent_indices]
     children = evo.crossover(parents..., config=evo.config)
@@ -203,7 +216,7 @@ function step!(evo::Evolution; eval_children=true, measure_likeness=true, intera
     end
     graves = ranking[1:2]
     evo.geo[graves] = children
-    if eval_children
+    if eval_children || measure_likeness
         for child_index in graves
             evo.fitness(evo.geo, child_index)
         end
