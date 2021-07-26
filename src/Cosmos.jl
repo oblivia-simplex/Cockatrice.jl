@@ -111,11 +111,7 @@ function run(;config::NamedTuple,
                objective_performance::Function,
                kwargs...)
 
-    if :experiment ∈ keys(config)
-        LOGGER = Logger(loggers, config.experiment)
-    else
-        LOGGER = Logger(loggers)
-    end
+    LOGGER = Logger(loggers, config)
 
     evo = Evo.Evolution(config,
                         creature_type=creature_type,
@@ -125,7 +121,6 @@ function run(;config::NamedTuple,
                         objective_performance=objective_performance,
                         tracers=tracers)
 
-    IM_log = []
 
     for i in 1:config.experiment_duration
         if stopping_condition(evo)
@@ -141,7 +136,8 @@ function run(;config::NamedTuple,
             continue
         end
 
-        push!(IM_log, copy(evo.geo.interaction_matrix))
+        push!(LOGGER.im_log, copy(evo.geo.interaction_matrix))
+        log_ims(LOGGER, [copy(evo.geo.interaction_matrix)], i)
 
         s = []
         for logger in loggers
@@ -153,7 +149,7 @@ function run(;config::NamedTuple,
         # FIXME: this is just a placeholder for logging, which will be customized
         # by the client code.
     end
-    return evo, LOGGER, IM_log
+    return evo, LOGGER
 end
 
 
@@ -171,11 +167,7 @@ function δ_run(;config::NamedTuple,
 
     started_at = now()
 
-    if :experiment ∈ keys(config)
-        LOGGER = Logger(loggers, config.experiment)
-    else
-        LOGGER = Logger(loggers)
-    end
+    LOGGER = Logger(loggers, config)
 
     E = δ_init(config=config,
                fitness=fitness,
@@ -186,7 +178,6 @@ function δ_run(;config::NamedTuple,
                mutate=mutate,
                objective_performance=objective_performance)
 
-    IM_log = []
     gui = nothing
     for i in 1:config.experiment_duration
         δ_step_for_duration!(E, Second(config.step_duration); kwargs...)
@@ -217,7 +208,6 @@ function δ_run(;config::NamedTuple,
         println(LOGGER.table[end, :])
 
         ims = δ_interaction_matrices(E)
-        push!(IM_log, ims)
         log_ims(LOGGER, ims, i)
         images = [Gray.(im) for im in ims]
         gui = Vis.display_images(reshape(images, (2, length(ims)÷2)), gui=gui)
@@ -229,7 +219,7 @@ function δ_run(;config::NamedTuple,
 
         @info "Total time elapsed: $(now() - started_at)"
     end
-    return E, LOGGER, IM_log
+    return E, LOGGER
 end
 
 

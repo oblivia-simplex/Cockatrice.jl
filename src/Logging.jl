@@ -6,6 +6,7 @@ using DataFrames
 using StatsBase
 using Printf
 using Mmap
+using Plots
 using ..Names
 
 export Logger, log!, dump, log_ims
@@ -19,7 +20,8 @@ end
 
 
 function make_log_dir(name=Names.rand_name(2))
-    stem = "log"
+    stem = "$(ENV["HOME"])/logs/refusr/"
+    mkpath(stem)
     n = now()
     dir = @sprintf "%s/%04d/%02d/%02d/%s" stem year(n) month(n) day(n) name
     mkpath(dir)
@@ -38,17 +40,26 @@ end
 
 struct Logger
     table::DataFrame
+    im_log::Vector
     log_dir::String
     csv_name::String
     name::String
 end
 
 
-function Logger(loggers, name=Names.rand_name(2))
+
+function Logger(loggers, config)
     n = now()
-    name = @sprintf "%s.%02d-%02d" name hour(n) minute(n)
+    if :experiment ∈ keys(config)
+        experiment = config.experiment
+    else
+        experiment = Names.rand_name(2)
+    end
+    name = @sprintf "%s.%02d-%02d" experiment hour(n) minute(n)
     csv_file = "report.csv"
-    Logger(make_stats_table(loggers), make_log_dir(name), csv_file, name)
+    dir = make_log_dir(name)
+    write("$(dir)/config.yaml", config.yaml)
+    Logger(make_stats_table(loggers), [], dir, csv_file, name)
 end
 
 function log!(L::Logger, row)
@@ -65,17 +76,22 @@ function dump(L, obj)
 end
 
 
+function write_im(path, im)
+    m, n = UInt16.(size(im))
+    open(path, "w+") do f
+        write(f, m)
+        write(f, n)
+        write(f, im)
+    end
+end
+
 function log_ims(L::Logger, ims, step)
+    push!(L.im_log, ims)
     dir = "$(L.log_dir)/IM/"
     mkpath(dir)
     for (i, im) in enumerate(ims)
         path = @sprintf "%s/%02d_IM_%04d.bin" dir i step
-        m, n = UInt16.(size(im))
-        open(path, "w+") do f
-            write(f, m)
-            write(f, n)
-            write(f, im)
-        end
+        write_im(path, im)
     end
 end
 
@@ -88,5 +104,9 @@ function read_im(path)
     end
 end
 
+
+function make_plots(L::Logger)
+    
+end
 
 end

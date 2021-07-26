@@ -142,9 +142,9 @@ function tournament(geo::Geography, fitness_function::Function)
         geo.deme[i].fitness = fitness_function(geo, i)
     end
 
-    attrs = geo.config.selection.lexical ?
-        eachindex(geo.deme[indices[1].fitness]) :
-        sort(eachindex(geo.deme[indices[1]].fitness), by=_->rand())
+    f_indices = eachindex(geo.deme[indices[1]].fitness)
+    
+    attrs = geo.config.selection.lexical ? f_indices : sort(f_indices, by=_->rand())
 
     sort(indices, by = i -> geo.deme[i].fitness[attrs])
 end
@@ -155,6 +155,8 @@ function pareto_fronts(geo::Geography)
     fronts = Pareto.nonDominatedSorting(indices, by=i->geo.deme[i].fitness)
     [indices[f] for f in fronts]
 end
+
+
 
 
 function evaluate!(geo::Geography, fitness_function::Function)
