@@ -6,6 +6,7 @@ using ..Geo
 
 using RecursiveArrayTools
 using InformationMeasures
+using StatsBase
 using SharedArrays
 using Distributed
 using Dates
@@ -182,12 +183,13 @@ end
 
 
 function likeness(a, b)
-    if a == b
-        return 1.0
-    end
-    e = get_entropy(a)
-    m = get_mutual_information(a, b)
-    iszero(e) ? m : m / e
+    return ((~).(a .⊻ b)) |> mean
+    #if a == b
+    #    return 1.0
+    #end
+    #e = get_entropy(a)
+    #m = get_mutual_information(a, b)
+    #iszero(e) ? m : m / e
 end
 
 
@@ -204,7 +206,7 @@ end
 
 ## TODO: eval_children should be a config field.
 # So should measure_likeness.
-function step!(evo::Evolution; eval_children=true, measure_likeness=false)
+function step!(evo::Evolution; eval_children=true, measure_likeness=true)
     ranking = Geo.tournament(evo.geo, evo.fitness)
     parent_indices = ranking[end-1:end]
     parents = evo.geo[parent_indices]

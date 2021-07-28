@@ -15,7 +15,7 @@ export Logger, log!, dump, log_ims
 function make_stats_table(loggers)
     cols = [Symbol("$(lg.key)_$(nameof(lg.reducer))") for lg in loggers]
     cols = [:iteration_mean; cols]
-    DataFrame([c => [] for c in cols]...)
+    Float64.(DataFrame([c => [] for c in cols]...))
 end
 
 
@@ -39,11 +39,14 @@ function make_dump_path(L)
 end
 
 struct Logger
+    config::NamedTuple
     table::DataFrame
     im_log::Vector
     log_dir::String
     csv_name::String
     name::String
+    specimens::Vector
+    timing::Vector
 end
 
 
@@ -59,7 +62,7 @@ function Logger(loggers, config)
     csv_file = "report.csv"
     dir = make_log_dir(name)
     write("$(dir)/config.yaml", config.yaml)
-    Logger(make_stats_table(loggers), [], dir, csv_file, name)
+    Logger(config, make_stats_table(loggers), [], dir, csv_file, name, [], [])
 end
 
 function log!(L::Logger, row)
