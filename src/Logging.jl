@@ -2,6 +2,7 @@ module Logging
 
 using CSV
 using Dates
+using Serialization
 using DataFrames
 using StatsBase
 using Printf
@@ -50,6 +51,12 @@ struct Logger
 end
 
 
+function dump_logger(L::Logger)
+    dump_path = "$(L.log_dir)/.L.dump"
+    serialize(dump_path, L)
+    return dump_path
+end
+
 
 function Logger(loggers, config)
     n = now()
@@ -70,6 +77,8 @@ function log!(L::Logger, row)
     append = records > 0
     push!(L.table, row)
     CSV.write("$(L.log_dir)/$(L.csv_name)", [L.table[end, :]], writeheader=!append, append=append)
+    dump_path = dump_logger(L)
+    @debug "Dumped logger" dump_path
     return records
 end
 
@@ -103,7 +112,9 @@ function read_im(path)
     open(path) do f
         m = read(f, UInt16)
         n = read(f, UInt16)
-        Mmap.mmap(f, BitArray, (m, n)) |> deepcopy
+        buf = BitArray(undef, (m, n))
+        read!(f, buf)
+        buf
     end
 end
 

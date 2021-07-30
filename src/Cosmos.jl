@@ -14,7 +14,6 @@ using DataFrames
 using ..Names
 using ..Evo
 using ..Config
-using ..Vis
 using ..Logging
 
 
@@ -112,21 +111,21 @@ end
 
 
 function run(;config::NamedTuple,
-               fitness::Function,
-               tracers=[],
-               loggers=[],
-               mutate::Function,
-               crossover::Function,
-               creature_type::DataType,
-               stopping_condition::Function,
-               objective_performance::Function,
-               WORKERS=workers(),
-               callback=_->(),
-               kwargs...)
+             fitness::Function,
+             tracers=[],
+             loggers=[],
+             mutate::Function,
+             crossover::Function,
+             creature_type::DataType,
+             stopping_condition::Function,
+             objective_performance::Function,
+             WORKERS=workers(),
+             callback=_->(),
+             LOGGER=Logger(loggers, config),
+             kwargs...)
 
     cores = length(WORKERS) 
 
-    LOGGER = Logger(loggers, config)
 
     E = δ_init(config=config,
                fitness=fitness,
@@ -157,35 +156,33 @@ function run(;config::NamedTuple,
         end
 
         # Logging
-        if i % config.logging.log_every != 0
-            continue
-        end
-
-        if cores > 1
-            mean_iteration = asyncmap(fetch, [@spawnat w E[:L][1].iteration for w in procs(E)]) |> mean
-        else
-            mean_iteration = E[1].iteration |> Float64
-        end
-
-        s = [mean_iteration]
-        for logger in loggers
+        begin
             if cores > 1
-                push!(s, δ_stats(E, key=logger.key, ϕ=logger.reducer))
+                mean_iteration = asyncmap(
+                    fetch,
+                    [@spawnat w E[:L][1].iteration for w in procs(E)]) |> mean
             else
-                push!(s, get_stats(E[1], key=logger.key, ϕ=logger.reducer))
+                mean_iteration = E[1].iteration |> Float64
             end
+
+            s = [mean_iteration]
+            for logger in loggers
+                if cores > 1
+                    push!(s, δ_stats(E, key=logger.key, ϕ=logger.reducer))
+                else
+                    push!(s, get_stats(E[1], key=logger.key, ϕ=logger.reducer))
+                end
+            end
+            log!(LOGGER, s)
+
+            if i > 1
+                specimen = rand(E).elites[1] |> deepcopy
+                push!(LOGGER.specimens, specimen)
+            end
+            ims = cores > 1 ? δ_interaction_matrices(E) : [copy(E[1].geo.interaction_matrix)]
+            log_ims(LOGGER, ims, i)
+            @time callback(LOGGER)
         end
-        log!(LOGGER, s)
-
-        specimen = rand(E).elites[1] |> deepcopy
-        push!(LOGGER.specimens, specimen)
-
-        ims = cores > 1 ? δ_interaction_matrices(E) : [copy(E[1].geo.interaction_matrix)]
-        log_ims(LOGGER, ims, i)
-        #images = [Gray.(im) for im in ims']
-        #gui = Vis.display_images(images, gui=gui)
-
-        @time callback(LOGGER)
 
         if cores > 1 && (isle = δ_check_stopping_condition(E, stopping_condition)) !== nothing
             @info "Stopping condition reached on Island $(isle)!"
