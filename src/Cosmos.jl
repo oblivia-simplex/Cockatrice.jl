@@ -68,6 +68,14 @@ function δ_interaction_matrices(E::World)
 end
 
 
+function δ_specimens(E::World)
+    futs1 = [@spawnat w deepcopy(E[:L][1].elites[1]) for w in procs(E) ]
+    futs2 = [@spawnat w deepcopy(filter(g -> !isnothing(g.phenotype), E[:L][1].geo.deme) |> rand) for w in procs(E)]
+    futs = [futs1; futs2]
+    asyncmap(fetch, futs)
+end
+
+
 function get_stats(evo; key="fitness_1", ϕ=mean)
     evo.trace[key][end] |> ϕ
 end
@@ -139,7 +147,15 @@ function run(;config::NamedTuple,
     gui = nothing
     started_at = now()
     @info("Logging to $(LOGGER.log_dir)/$(LOGGER.csv_name)...")
-    for i in 1:config.experiment_duration
+    i = 0
+    while true #for i in 1:(config.experiment_duration+1)
+        if i > 0 && LOGGER.table[end, :iteration_mean] > config.experiment_duration
+            Logging.mark_as_finished(LOGGER, "experiment_duration elapsed")
+            break
+        end
+
+        i += 1
+        
         if cores > 1
             δ_step_for_duration!(E, Second(config.step_duration); kwargs...)
         else
@@ -176,8 +192,13 @@ function run(;config::NamedTuple,
             log!(LOGGER, s)
 
             if i > 1
-                specimen = rand(E).elites[1] |> deepcopy
-                push!(LOGGER.specimens, specimen)
+                #specimen = rand(E).elites[1] |> deepcopy
+                #push!(LOGGER.specimens, specimen)
+                if cores > 1
+                    Logging.add_specimen(LOGGER, δ_specimens(E)...)
+                else
+                    Logging.add_specimen(LOGGER, deepcopy(E[1].elites[1]))
+                end
             end
             ims = cores > 1 ? δ_interaction_matrices(E) : [copy(E[1].geo.interaction_matrix)]
             log_ims(LOGGER, ims, i)
@@ -186,9 +207,11 @@ function run(;config::NamedTuple,
 
         if cores > 1 && (isle = δ_check_stopping_condition(E, stopping_condition)) !== nothing
             @info "Stopping condition reached on Island $(isle)!"
+            Logging.mark_as_finished(LOGGER, "stopping condition reached on island $(isle)")
             break
         elseif cores == 1 && stopping_condition(E[1])
             @info "Stopping condition reached!"
+            Logging.mark_as_finished(LOGGER, "stopping condition reached")
             break
         end
     end
