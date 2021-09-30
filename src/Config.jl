@@ -8,16 +8,16 @@ export get_config, get_fitness_function
 
 "convert Dict to named tuple"
 function proc_config(cfg::Dict)
-    (; (Symbol(k)=>proc_config(v) for (k, v) in cfg)...)
+    (; (Symbol(k) => proc_config(v) for (k, v) in cfg)...)
 end
 
 proc_config(v) = v
 
 "combine YAML file and kwargs, make sure ID is specified"
-function parse(cfg_file::String, default_fields=[])
+function parse(cfg_file::String, default_fields = [])
     cfg_txt = read(cfg_file, String)
     cfg = YAML.load_file(cfg_file)
-    
+
     for (ks, val) in default_fields
         if length(ks) == 2
             k1, k2 = ks
@@ -25,7 +25,7 @@ function parse(cfg_file::String, default_fields=[])
                 cfg[k1] = Dict()
             end
             if !(k2 ∈ keys(cfg[k1]))
-                cfg[k1][k2] =  val
+                cfg[k1][k2] = val
             end
         elseif length(ks) == 1
             k1 = ks[1]
@@ -34,11 +34,10 @@ function parse(cfg_file::String, default_fields=[])
             end
         end
     end
-    
-    cfg["yaml"] = cfg_txt
+
     # generate id, use date if no existing id
     if ~(:id in keys(cfg))
-      cfg["id"] = "$(Names.rand_name(2))_$(Dates.now())"
+        cfg["id"] = "$(Names.rand_name(2))_$(Dates.now())"
     end
     proc_config(cfg)
 end
@@ -53,5 +52,22 @@ function get_fitness_function(config_path::String, mod)
     get_fitness_function(Config.parse(config_path), mod)
 end
 
+
+function to_dict(config::NamedTuple)
+    d = Dict()
+    for key in keys(config)
+        val = config[key] isa NamedTuple ? to_dict(config[key]) : config[key]
+        if val isa Vector{Symbol}
+            val = join(string.(val), " ")
+        end
+        d[string(key)] = val
+    end
+    return d
+end
+
+
+function to_yaml(config::NamedTuple)
+    to_dict(config) |> YAML.yaml
+end
 
 end # end module

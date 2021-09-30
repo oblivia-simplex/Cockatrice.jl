@@ -23,16 +23,13 @@ Base.@kwdef mutable struct Geography{G,N}
 end
 
 
-function Geography(
-    constructor,
-    config;
-)
+function Geography(constructor, config;)
 
     dimstr = join(string.(config.population.size), "×")
     @info "Generating distributed population of $dimstr ($(prod(config.population.size))) genomes..."
 
     indices = CartesianIndices(Tuple(config.population.size))
-    hilbert_indices = generate_hilbert_indices(indices) 
+    hilbert_indices = generate_hilbert_indices(indices)
     #indices = reshape(indices, prod(config.population.size)) |> collect
     deme = [constructor(config) for _ in indices]
 
@@ -50,7 +47,7 @@ end
 # This looks a bit hairy, and can almost certainly be optimized
 function generate_hilbert_indices(indices)
     inds = [encode_hilbert(Simple2D(Int), [x for x in Tuple(i)]) for i in indices]
-    sort(reshape(indices, prod(size(indices))), by=i->inds[i]) |> collect
+    sort(reshape(indices, prod(size(indices))), by = i -> inds[i]) |> collect
 end
 
 # FIXME: this is only well defined for 2d geographies.
@@ -81,7 +78,7 @@ function toroidal_distance(dims, point1, point2)
 end
 
 
-@memoize Dict function distance_weights(indices; origin, locality, toroidal=true)
+@memoize Dict function distance_weights(indices; origin, locality, toroidal = true)
     distance_λ = x -> x^locality
     dims = size(indices)
     function dist(pt)
@@ -100,10 +97,12 @@ end
 
 
 function distance_weights(geo::Geography, origin)
-    distance_weights(geo.indices,
-                     origin=origin,
-                     locality=geo.locality,
-                     toroidal=geo.toroidal)
+    distance_weights(
+        geo.indices,
+        origin = origin,
+        locality = geo.locality,
+        toroidal = geo.toroidal,
+    )
 end
 
 
@@ -112,25 +111,25 @@ function see_weights(geo::Geography, origin)
 end
 
 
-function choose_combatants(geo::Geography, tsize; origin=nothing)
+function choose_combatants(geo::Geography, tsize; origin = nothing)
     @assert tsize > 1
     origin = origin === nothing ? rand(geo.indices) : origin
     weights = distance_weights(geo, origin)
-    sample(geo.indices, weights, tsize, replace=false)
+    sample(geo.indices, weights, tsize, replace = false)
 end
 
 
-function see_combatants(geo::Geography, tsize; origin=nothing)
-    combatants = choose_combatants(geo, tsize, origin=origin)
+function see_combatants(geo::Geography, tsize; origin = nothing)
+    combatants = choose_combatants(geo, tsize, origin = origin)
     cells = [c ∈ combatants ? 1.0 : 0.0 for c in geo.indices]
     Gray.(cells)
 end
 
 
-function see_fitness(geo::Geography; d=1)
+function see_fitness(geo::Geography; d = 1)
     Gray.([g.fitness[d] for g in geo.deme])
 end
- 
+
 
 
 """
@@ -143,8 +142,8 @@ function tournament(geo::Geography, fitness_function::Function)
     end
 
     f_indices = eachindex(geo.deme[indices[1]].fitness)
-    
-    attrs = geo.config.selection.lexical ? f_indices : sort(f_indices, by=_->rand())
+
+    attrs = geo.config.selection.lexical ? f_indices : sort(f_indices, by = _ -> rand())
 
     sort(indices, by = i -> geo.deme[i].fitness[attrs])
 end
@@ -152,7 +151,7 @@ end
 
 function pareto_fronts(geo::Geography)
     indices = reshape(geo.indices, prod(size(geo.indices)))
-    fronts = Pareto.nonDominatedSorting(indices, by=i->geo.deme[i].fitness)
+    fronts = Pareto.nonDominatedSorting(indices, by = i -> geo.deme[i].fitness)
     [indices[f] for f in fronts]
 end
 
@@ -160,9 +159,9 @@ end
 
 
 function evaluate!(geo::Geography, fitness_function::Function)
-  Threads.@threads for i in geo.indices
-    geo.deme[i].fitness = fitness_function(geo.deme[i])
-  end
+    Threads.@threads for i in geo.indices
+        geo.deme[i].fitness = fitness_function(geo.deme[i])
+    end
 end
 
 ##

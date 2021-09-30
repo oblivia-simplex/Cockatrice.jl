@@ -1,18 +1,19 @@
 module Logging
 
+
+using ..Config
+using ..Names
 using CSV
+using DataFrames
+using Dates
 using GZip
 using Glob
-using Dates
-using Serialization
-using DataFrames
-using StatsBase
-using Printf
+using JSON
 using Mmap
 using Plots
-using ..Names
-using JSON
-
+using Printf
+using Serialization
+using StatsBase
 export Logger, log!, dump, log_ims
 
 
@@ -27,7 +28,7 @@ function make_stats_table(loggers)
 end
 
 
-function make_log_dir(name=Names.rand_name(2); make=false)
+function make_log_dir(name = Names.rand_name(2); make = false)
     stem = "$(ENV["HOME"])/logs/refusr/"
     n = now()
     dir = @sprintf "%s/%04d/%02d/%02d/%s" stem year(n) month(n) day(n) name
@@ -35,7 +36,7 @@ function make_log_dir(name=Names.rand_name(2); make=false)
     return dir
 end
 
-function make_csv_filename(name=Names.rand_name(2))
+function make_csv_filename(name = Names.rand_name(2))
     n = now()
     @sprintf "%s.%02d-%02d.csv" name hour(n) minute(n)
 end
@@ -79,7 +80,7 @@ function Logger(loggers, config)
         config.logging.dir
     else
 
-        dir = make_log_dir(experiment, make=true)
+        dir = make_log_dir(experiment, make = true)
     end
     write("$(dir)/STATUS.TXT", "running")
 
@@ -93,8 +94,19 @@ function Logger(loggers, config)
     end
 
     csv_file = "report.csv"
-    write("$(dir)/config.yaml", config.yaml)
-    Logger(config, make_stats_table(loggers), [], dir, csv_file, experiment, [], [], Set{String}())
+    write("$(dir)/config.yaml", Config.to_yaml(config))
+
+    Logger(
+        config,
+        make_stats_table(loggers),
+        [],
+        dir,
+        csv_file,
+        experiment,
+        [],
+        [],
+        Set{String}(),
+    )
 end
 
 
@@ -107,12 +119,14 @@ function add_specimen(L, specimens...)
         end
         push!(L.specimen_names, g.name)
         push!(L.specimens, g)
-        filename = @sprintf("%06d_isle:%02d_gen:%04d_perf:%04f_name:%s_.json.gz",
-                            length(L.specimens),
-                            g.native_island,
-                            g.generation,
-                            g.performance,
-                            g.name)
+        filename = @sprintf(
+            "%06d_isle:%02d_gen:%04d_perf:%04f_name:%s_.json.gz",
+            length(L.specimens),
+            g.native_island,
+            g.generation,
+            g.performance,
+            g.name
+        )
         j_path = "$(specimen_dir)/$(filename)"
         GZip.open(j_path, "w") do io
             write(io, json(g))
@@ -126,7 +140,7 @@ function parse_specimen_filename(filename)
     index = parse(Int, parts[1])
     # last part is the extension
     attrs = parts[2:end-1]
-    d = Dict{String, Any}(a[1] => a[2] for a in (split(attr, ":") for attr in attrs))
+    d = Dict{String,Any}(a[1] => a[2] for a in (split(attr, ":") for attr in attrs))
 
     d["isle"] = parse(Int, d["isle"])
     d["gen"] = parse(Int, d["gen"])
@@ -136,7 +150,7 @@ function parse_specimen_filename(filename)
 end
 
 
-function read_specimen_file(;log_dir, filename, constructor=nothing)
+function read_specimen_file(; log_dir, filename, constructor = nothing)
     path = "$(log_dir)/specimens/$(filename)"
     GZip.open(path, "r") do io
         d = JSON.parse(io)
@@ -157,7 +171,7 @@ function list_specimen_files(log_dir)
     end
 end
 
-function read_specimens_from_disk(log_dir; constructor=nothing)
+function read_specimens_from_disk(log_dir; constructor = nothing)
     try
         specimen_files = walkdir("$(log_dir)/specimens/") |> first |> last
         [read_specimen_file(s, constructor) for s in specimen_files]
@@ -167,7 +181,7 @@ function read_specimens_from_disk(log_dir; constructor=nothing)
 end
 
 
-function mark_as_finished(L, note="")
+function mark_as_finished(L, note = "")
     write("$(L.log_dir)/STATUS.TXT", "finished\n$(note)\n")
 end
 
@@ -179,8 +193,13 @@ function log!(L::Logger, row)
     records = size(L.table, 1)
     append = records > 0
     push!(L.table, row)
-    CSV.write("$(L.log_dir)/$(L.csv_name)", [L.table[end, :]], writeheader=!append, append=append)
-    
+    CSV.write(
+        "$(L.log_dir)/$(L.csv_name)",
+        [L.table[end, :]],
+        writeheader = !append,
+        append = append,
+    )
+
     stamp(L.log_dir)
     #dump_path = dump_logger(L)
     #@debug "Dumped logger" dump_path
@@ -215,7 +234,7 @@ function log_ims(L::Logger, ims, step)
 end
 
 
-function read_ims_at_step(;log_dir, step=:last)
+function read_ims_at_step(; log_dir, step = :last)
     dir = "$(log_dir)/IM/"
     if step === :last
         files = walkdir(dir) |> first |> last
@@ -260,7 +279,7 @@ end
 
 
 function make_plots(L::Logger)
-    
+
 end
 
 end

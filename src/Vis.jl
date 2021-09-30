@@ -3,7 +3,7 @@ module Vis
 using RecursiveArrayTools
 using ImageView, Gtk.ShortNames, Images
 
-function process_images(arr; color=nothing)
+function process_images(arr; color = nothing)
     m = maximum.(arr) |> maximum
     normed = m > 0.0 ? arr ./ m : arr
     finite = (A -> (a -> isfinite(a) ? Float64(a) : 0.0).(A)).(arr)
@@ -17,15 +17,15 @@ end
 
 
 
-function trace_video(evo; key="fitness_1", color=colorant"green")
-    trace = process_images(evo.trace[key], color=color)
+function trace_video(evo; key = "fitness_1", color = colorant"green")
+    trace = process_images(evo.trace[key], color = color)
     fvec = VectorOfArray(trace)
     video = convert(Array, fvec)
     AxisArray(video)
 end
 
 
-function display_images(images; dims=(300,300), gui=nothing)
+function display_images(images; dims = (300, 300), gui = nothing)
     rows, cols = size(images)
     show = ImageView.imshow!
     if gui ≡ nothing
@@ -34,12 +34,12 @@ function display_images(images; dims=(300,300), gui=nothing)
     end
     canvases = gui["canvas"]
 
-    for r in 1:rows
-        for c in 1:cols
-            i = r*c
-            image = images[r,c]
+    for r = 1:rows
+        for c = 1:cols
+            i = r * c
+            image = images[r, c]
             if image !== nothing
-                show(canvases[r,c], images[r,c])
+                show(canvases[r, c], images[r, c])
             end
         end
     end

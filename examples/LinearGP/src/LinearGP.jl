@@ -18,8 +18,8 @@ end
 
 Base.@kwdef mutable struct Creature
     chromosome::Vector{Inst}
-    effective_code
-    phenotype
+    effective_code::Any
+    phenotype::Any
     fitness::Vector{Float64}
     name::String
     generation::Int
@@ -29,14 +29,16 @@ end
 
 function Creature(config::NamedTuple)
     len = rand(config.genotype.min_len:config.genotype.max_len)
-    chromosome = [rand_inst(ops=OPS, num_regs=NUM_REGS) for _ in 1:len]
+    chromosome = [rand_inst(ops = OPS, num_regs = NUM_REGS) for _ = 1:len]
     fitness = Evo.init_fitness(config)
-    Creature(chromosome=chromosome,
-             effective_code=nothing,
-             phenotype=nothing,
-             fitness=fitness,
-             name=Names.rand_name(4),
-             generation=0)
+    Creature(
+        chromosome = chromosome,
+        effective_code = nothing,
+        phenotype = nothing,
+        fitness = fitness,
+        name = Names.rand_name(4),
+        generation = 0,
+    )
 end
 
 
@@ -52,12 +54,14 @@ function Base.show(io::IO, inst::Inst)
 end
 
 function Creature(chromosome::Vector{Inst})
-    Creature(chromosome=chromosome,
-             effective_code=nothing,
-             phenotype=nothing,
-             fitness=[-Inf],
-             name=Names.rand_name(4),
-             generation=0)
+    Creature(
+        chromosome = chromosome,
+        effective_code = nothing,
+        phenotype = nothing,
+        fitness = [-Inf],
+        name = Names.rand_name(4),
+        generation = 0,
+    )
 end
 
 
@@ -77,15 +81,15 @@ function crossover(mother::Creature, father::Creature)::Vector{Creature}
 end
 
 
-function mutate!(creature::Creature; config=nothing)
+function mutate!(creature::Creature; config = nothing)
     inds = keys(creature.chromosome)
     i = rand(inds)
-    creature.chromosome[i] = rand_inst(ops=OPS, num_regs=NUM_REGS) # FIXME hardcoded
+    creature.chromosome[i] = rand_inst(ops = OPS, num_regs = NUM_REGS) # FIXME hardcoded
     return
 end
 
 """Safe division"""
-⊘(a,b) = iszero(b) ? a : a/b
+⊘(a, b) = iszero(b) ? a : a / b
 
 constant(c) = () -> c
 
@@ -108,17 +112,10 @@ OPS = [
 ]
 
 
-BOOL_OPS = [
-    (⊻, 2),
-    (|, 2),
-    (&, 2),
-    (!, 1),
-    (constant(true), 0),
-    (constant(false), 0),
-]
+BOOL_OPS = [(⊻, 2), (|, 2), (&, 2), (!, 1), (constant(true), 0), (constant(false), 0)]
 
 
-function rand_inst(;ops=OPS, num_regs=NUM_REGS)
+function rand_inst(; ops = OPS, num_regs = NUM_REGS)
     op, arity = rand(ops)
     dst = rand(1:num_regs)
     src = rand(1:num_regs)
@@ -126,7 +123,7 @@ function rand_inst(;ops=OPS, num_regs=NUM_REGS)
 end
 
 
-function evaluate_inst!(;regs::Vector, inst::Inst)
+function evaluate_inst!(; regs::Vector, inst::Inst)
     if inst.arity == 2
         args = regs[[inst.dst, inst.src]]
     elseif inst.arity == 1
@@ -138,11 +135,11 @@ function evaluate_inst!(;regs::Vector, inst::Inst)
 end
 
 
-function evaluate(;regs::Vector, args::Vector, code::Vector)
+function evaluate(; regs::Vector, args::Vector, code::Vector)
     regs = copy(regs)
     regs[1:length(args)] = args
     for inst in code
-        evaluate_inst!(regs=regs, inst=inst)
+        evaluate_inst!(regs = regs, inst = inst)
     end
     regs
 end
@@ -152,7 +149,7 @@ function strip_introns(code, out_regs)
     active_regs = copy(out_regs)
     active_insts = []
     for inst in reverse(code)
-        if inst.dst ∈ active_regs 
+        if inst.dst ∈ active_regs
             push!(active_insts, inst)
             filter!(r -> r != inst.dst, active_regs)
             if inst.arity == 2
@@ -191,9 +188,9 @@ DATA = CSV.read("$(@__DIR__)/../data/digimon.csv", DataFrame)
 #DATA, CLASSES = _get_categorical_dataset("iris")
 
 
-function classify(g; strip_introns=true, config=nothing)
+function classify(g; strip_introns = true, config = nothing)
     regs = zeros(Float64, NUM_REGS) # FIXME shouldn't be hardcoded, pass config to ff?
-    outregs = collect((1 + length(regs) - length(CLASSES)):length(regs))
+    outregs = collect((1+length(regs)-length(CLASSES)):length(regs))
     code = g.chromosome
     if strip_introns
         if g.effective_code === nothing
@@ -201,14 +198,16 @@ function classify(g; strip_introns=true, config=nothing)
         end
         code = g.effective_code
     end
-    if length(code) == 0 return zeros(Float64, 3) end
+    if length(code) == 0
+        return zeros(Float64, 3)
+    end
     correct = 0
     choices = []
     for row in eachrow(DATA)
         r = collect(row)
         class = r[end]
         args = r[1:end-1]
-        res_regs = LinearGP.evaluate(regs=regs, args=args, code=code)
+        res_regs = LinearGP.evaluate(regs = regs, args = args, code = code)
         output = res_regs[outregs]
         ranking = sort(keys(output), by = i -> output[i])
         choice = ranking[end]
