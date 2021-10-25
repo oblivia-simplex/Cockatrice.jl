@@ -125,9 +125,24 @@ function see_combatants(geo::Geography, tsize; origin = nothing)
     Gray.(cells)
 end
 
+# assume that the weights have been normalized
+function fitness_scalar(config, fitness)
+    weights = config.selection.fitness_weights
+    weight_vals = values(weights)
+    weighted = []
+    for k in keys(weights)
+        if haskey(fitness, k)
+            push!(weighted, fitness.k * weights.k)
+        else
+            return -Inf
+        end
+    end
+    return mean(weighted)
+end
+
 
 function see_fitness(geo::Geography; d = 1)
-    Gray.([g.fitness[d] for g in geo.deme])
+    Gray.([fitness_scalar(geo.config, g.fitness) for g in geo.deme])
 end
 
 
@@ -141,11 +156,8 @@ function tournament(geo::Geography, fitness_function::Function)
         geo.deme[i].fitness = fitness_function(geo, i)
     end
 
-    f_indices = eachindex(geo.deme[indices[1]].fitness)
 
-    attrs = geo.config.selection.lexical ? f_indices : sort(f_indices, by = _ -> rand())
-
-    sort(indices, by = i -> geo.deme[i].fitness[attrs])
+    sort(indices, by = i -> fitness_scalar(geo.config, geo.deme[i].fitness))
 end
 
 

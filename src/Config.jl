@@ -13,6 +13,14 @@ end
 
 proc_config(v) = v
 
+
+function normalize!(weights)
+    s = sum(values(weights))
+    for k in keys(weights)
+        weights[k] /= sum
+    end
+end
+
 "combine YAML file and kwargs, make sure ID is specified"
 function parse(cfg_file::String, default_fields = [])
     cfg_txt = read(cfg_file, String)
@@ -36,8 +44,14 @@ function parse(cfg_file::String, default_fields = [])
     end
 
     # generate id, use date if no existing id
-    if ~(:id in keys(cfg))
+    if ~("id" in keys(cfg))
         cfg["id"] = "$(Names.rand_name(2))_$(Dates.now())"
+    end
+
+    # now, normalize the fitness weights if present
+    if ("selection" ∈ keys(cfg)) &&
+        ("fitness_weights" ∈ keys(cfg["selection"]))
+        normalize!(cfg["selection"]["fitness_weights"])
     end
     proc_config(cfg)
 end
@@ -69,5 +83,7 @@ end
 function to_yaml(config::NamedTuple)
     to_dict(config) |> YAML.yaml
 end
+
+
 
 end # end module
