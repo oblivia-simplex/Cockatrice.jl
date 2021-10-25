@@ -45,7 +45,7 @@ function δ_step!(E::World; kwargs...)
 end
 
 
-DEFAULT_LOGGERS = [(key = "fitness_1", reducer = StatsBase.mean)]
+DEFAULT_LOGGERS = []
 
 
 

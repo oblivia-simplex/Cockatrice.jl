@@ -4,7 +4,7 @@ using StatsBase
 using BijectiveHilbert
 using Memoize
 using Distributed
-using RecursiveArrayTools
+#using RecursiveArrayTools
 using ..Pareto
 
 
