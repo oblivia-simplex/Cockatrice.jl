@@ -234,7 +234,6 @@ function step!(evo::Evolution; eval_children = true, measure_likeness = true)
     end
     preserve_elites!(evo)
     evo.iteration += 1
-    trace!(evo)
 
     if measure_likeness
         parents = evo.geo[parent_indices]
@@ -257,6 +256,7 @@ function step_for_duration!(evo, duration; kwargs...)
     while now() - start < duration
         step!(evo; kwargs...)
     end
+    trace!(evo)
     iters = evo.iteration - start_iter
     return iters
 end

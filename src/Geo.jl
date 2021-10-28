@@ -132,7 +132,7 @@ function fitness_scalar(config, fitness)
     weighted = []
     for k in keys(weights)
         if haskey(fitness, k)
-            push!(weighted, fitness.k * weights.k)
+            push!(weighted, fitness[k] * weights[k])
         else
             return -Inf
         end
