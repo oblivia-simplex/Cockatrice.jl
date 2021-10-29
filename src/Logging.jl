@@ -79,7 +79,6 @@ function Logger(loggers, config)
         mkpath(config.logging.dir)
         config.logging.dir
     else
-
         dir = make_log_dir(experiment, make = true)
     end
     write("$(dir)/STATUS.TXT", "running")
