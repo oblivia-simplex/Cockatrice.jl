@@ -15,7 +15,7 @@ proc_config(v) = v
 
 
 function normalize!(weights)
-    σ = sum(values(weights))
+    σ = sum(values(weights)) |> Float64
     for k in keys(weights)
         weights[k] /= σ
     end
