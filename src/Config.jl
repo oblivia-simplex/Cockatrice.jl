@@ -18,7 +18,7 @@ function normalize(weights)
     W = Dict()
     σ = sum(values(weights)) |> Float64
     for k in keys(weights)
-        W[k] /= σ
+        W[k] = weights[k] / σ
     end
     return W
 end
