@@ -14,11 +14,13 @@ end
 proc_config(v) = v
 
 
-function normalize!(weights)
+function normalize(weights)
+    W = Dict()
     σ = sum(values(weights)) |> Float64
     for k in keys(weights)
-        weights[k] /= σ
+        W[k] /= σ
     end
+    return W
 end
 
 "combine YAML file and kwargs, make sure ID is specified"
@@ -51,7 +53,7 @@ function parse(cfg_file::String, default_fields = [])
     # now, normalize the fitness weights if present
     if ("selection" ∈ keys(cfg)) &&
         ("fitness_weights" ∈ keys(cfg["selection"]))
-        normalize!(cfg["selection"]["fitness_weights"])
+        cfg["selection"]["fitness_weights"] = normalize(cfg["selection"]["fitness_weights"])
     end
     proc_config(cfg)
 end
