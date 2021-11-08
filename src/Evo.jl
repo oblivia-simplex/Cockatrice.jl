@@ -215,7 +215,7 @@ end
 
 ## TODO: eval_children should be a config field.
 # So should measure_likeness.
-function step!(evo::Evolution; eval_children = true, measure_likeness = true)
+function step!(evo::Evolution; eval_children = false, measure_likeness = false)
     ranking = Geo.tournament(evo.geo, evo.fitness)
     parent_indices = ranking[end-1:end]
     parents = evo.geo[parent_indices]
